@@ -19,20 +19,26 @@ def kicker_command(bot, trigger):
 class KickerManager:
     def __init__(self, bot):
         self.players = {}
-        self.games = []
+        self.games = {}
         self.bot = bot
+        self.events = []
+
+    def _add_event(self, event, print_reply=False):
+    	self.events.append(event)
+        reply = self.events[-1].processEvent(players, games)
+        if print_reply:
+        	self.bot.say(reply)
 
     def _add_player(self, name):
-        self.players[name] = KickerPlayer(name)
-        self.bot.say('added: ' + str(self.players[name]))
+        self._add_event(AddPlayerEvent(name), print_reply=True)
 
     def _add_game(self, command):
-        self.games.append(KickerGame(command))
-        self.bot.say('added: ' + str(self.games[-1]))
+        self._add_event(AddGameEvent(command), print_reply=True)
 
     def _show_ladder(self, bot):
         bot.say(str(self.players))
         bot.say(str(self.games))
+        bot.say(str(self.events))
 
     def kicker_command(self, bot, trigger):
         text = trigger.group().split()
@@ -51,9 +57,56 @@ class KickerManager:
 
 
 class KickerPlayer:
-   def __init__(self, name):
+    def __init__(self, name):
         self.name = name
+        self.deleted = False
+
+    def delete():
+    	self.deleted = True
+
 
 class KickerGame:
     def __init__(self, commandString):
         self.command = commandString
+        self.deleted = False
+
+    def delete():
+    	self.deleted = True
+
+class KickerEvent:
+	pass
+
+class AddPlayerEvent(KickerEvent):
+	def __init__(self, player):
+		self.player = player
+
+	def processEvent(self, players, games):
+		players[self.player] = KickerPlayer(name)
+		return 'added: ' + kwargs['player']
+
+class DelPlayerEvent(KickerEvent):
+	def __init__(self, player):
+		self.player = player
+
+	def processEvent(self, players, games):
+		players[self.player].delete()
+		return 'deleted: ' + kwargs['player']
+
+class AddGameEvent(KickerEvent):
+	def __init__(self, command):
+		self.command = command
+
+	def processEvent(self, players, games, **kwargs):
+		toAdd = KickerGame(self.command)
+		games.KickerGame[len(self.games)+1] = toAdd
+		return 'add game: ' + toAdd)
+
+class DelGameEvent(KickerEvent):
+	def __init__(self, number):
+		self.number = number
+
+	def processEvent(self, players, games):
+		games[number].delete()
+		return 'del game: ' + games[number]
+
+
