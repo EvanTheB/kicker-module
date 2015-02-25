@@ -3,10 +3,18 @@
 ebenn, modified from rss.py
 """
 from __future__ import unicode_literals
+try:
+	from willie.module import commands, interval
+	from willie.config import ConfigurationError
+	from willie.logger import get_logger
+	@commands('kicker')
+	def kicker_command(bot, trigger):
+	    """Manage RSS feeds. For a list of commands, type: .rss help"""
+	    text = trigger.group().split()
+	    bot.memory['kicker_manager'].kicker_command(bot, text)
 
-from willie.module import commands, interval
-from willie.config import ConfigurationError
-from willie.logger import get_logger
+except ImportError as e:
+	print "could not import willie"
 
 import json
 
@@ -14,14 +22,10 @@ def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
 
 
-@commands('kicker')
-def kicker_command(bot, trigger):
-    """Manage RSS feeds. For a list of commands, type: .rss help"""
-    bot.memory['kicker_manager'].kicker_command(bot, trigger)
 
 
 def do_ranker(players, score_a, score_b):
-    ELO_ranker(players)
+    ELO_ranker(players, score_a, score_b)
 
 
 def basic_ranker(players, score_a, score_b):
@@ -41,14 +45,33 @@ def ELO_ranker(players, score_a, score_b):
     R2 = 10 ** (r2 / 400)
     E1 = R1 / (R1 + R2)
     E2 = R2 / (R1 + R2)
-    rd1 = r1 + K * (score_a - E1)
-    rd2 = r2 + K * (score_b - E2)
+    rd1 = r1 + K * (score_a*1.0/(score_a+score_b) - E1)
+    rd2 = r2 + K * (score_b*1.0/(score_a+score_b) - E2)
+
+	# smart bin search way of doing it?
+    #sqrt((a+d)(b+d)) = c
+    #d(b+a+d)=c^2
+    def cloj(a, b, c):
+    	return lambda d: (c**2 - a*b) - d*a - d*b - d*d
+   	def bin_s(func, g_min, g_max):
+   		ans = func((g_min - g_min)/2)
+   		while(abs(ans) > 0.1):
+	   		if ans > 0:
+	   			g_max = (g_min - g_min)/2
+	   		else:
+	   			g_min = (g_min - g_min)/2
+	   		ans = func((g_min - g_min)/2)
+	   	return ans
+
+	print "cloj:", bin_s(cloj(players[0].rank, players[1].rank, rd1), 0, 2000)
 
     # Not quite accurate reversal of formula. Good enough?
     delta1 = (
-        rd1 ** 2 - players[0].rank * players[1].rank) / (players[0].rank + players[1].rank)
+        (rd1 ** 2 - players[0].rank * players[1].rank)) / (players[0].rank + players[1].rank)
     delta2 = (
-        rd2 ** 2 - players[2].rank * players[3].rank) / (players[2].rank + players[3].rank)
+        (rd2 ** 2 - players[2].rank * players[3].rank)) / (players[2].rank + players[3].rank)
+
+
 
     players[0].rank += delta1
     players[1].rank += delta1
@@ -66,15 +89,36 @@ class KickerManager:
         with open('kicker.log', 'r') as log:
             kicker_log = json.load(log)
         self._load_from_log(kicker_log)
+        self.save_to_log()
 
-    def _load_from_log(log):
-        pass
+    def _load_from_log(self, log):
+    	events = log['events']
+    	for e in events:
+    		if e['type'] == "AddPlayerEvent":
+    			self._add_event(AddPlayerEvent.from_json(e))
+    		elif e['type'] == "AddGameEvent":
+    			self._add_event(AddGameEvent.from_json(e))
+    		else:
+    			assert False, "failed to load event: " + str(e)
 
     def _add_event(self, event, print_reply=False):
         self.events.append(event)
         reply = self.events[-1].processEvent(self.players, self.games)
         # if print_reply:
         # self.bot.say(reply)
+
+    def save_to_log(self):
+  		to_save = {}
+  		to_save['events'] = []
+  		for e in self.events:
+  			to_save['events'].append(e.to_json())
+  		with open('kicker.log', 'w') as log:
+  			json.dump(
+            	to_save,
+            	log,
+            	sort_keys=True,
+                indent=4,
+                separators=(',', ': '))
 
     def _add_player(self, name):
         self._add_event(AddPlayerEvent(name), print_reply=True)
@@ -93,16 +137,15 @@ class KickerManager:
             bot.say("{}: {}, {}".format(count, p.name, p.rank))
             count += 1
 
-    def kicker_command(self, bot, trigger):
-        text = trigger.group().split()
-        print text
-        if text[1] == 'add':
-            self._add_player(text[2])
+    def kicker_command(self, bot, command):
+        print command
+        if command[1] == 'add':
+            self._add_player(command[2])
 
-        elif text[1] == 'game':
-            self._add_game(text[2:])
+        elif command[1] == 'game':
+            self._add_game(command[2:])
 
-        elif text[1] == 'ladder':
+        elif command[1] == 'ladder':
             self._show_ladder(bot)
 
         else:
@@ -124,23 +167,24 @@ class KickerPlayer:
 
 
 class KickerGame:
-    def __init__(self, commandString):
-        self.command = commandString
+    def __init__(self, commandWords):
+        self.command = commandWords
 
         self.players = []
-        self.players.append(commandString[0])
-        self.players.append(commandString[1])
-        self.players.append(commandString[3])
-        self.players.append(commandString[4])
+        self.players.append(commandWords[0])
+        self.players.append(commandWords[1])
+        self.players.append(commandWords[3])
+        self.players.append(commandWords[4])
 
-        if commandString[2] == 'beat':
+        if commandWords[2] == u'beat':
             self.score = 2
-        elif commandString[2] == 'draw':
+        elif commandWords[2] == u'draw':
             self.score = 1
-        elif commandString[2] == 'lost':
+        elif commandWords[2] == u'lost':
             self.score = 0
         else:
             print 'fail game init'
+            print commandWords, commandWords[2]
 
         self.deleted = False
 
@@ -171,15 +215,16 @@ class AddPlayerEvent(KickerEvent):
         players[self.player.name] = self.player
         return 'added: ' + str(self.player)
 
+    def to_json(self):
+    	ret = {}
+    	ret['type'] = 'AddPlayerEvent'
+    	ret['player'] = self.player.name
+    	return ret
 
-class DelPlayerEvent(KickerEvent):
-
-    def __init__(self, player):
-        self.player = player
-
-    def processEvent(self, players, games):
-        players[self.player].delete()
-        return 'deleted: ' + str(self.player)
+    @staticmethod
+    def from_json(the_json):
+    	assert the_json['type'] == 'AddPlayerEvent'
+    	return AddPlayerEvent(the_json['player'])
 
 
 class AddGameEvent(KickerEvent):
@@ -202,12 +247,13 @@ class AddGameEvent(KickerEvent):
         games[len(games) + 1] = self.game
         return 'add game: ' + str(self.game)
 
+    def to_json(self):
+    	ret = {}
+    	ret['type'] = 'AddGameEvent'
+    	ret['command'] = " ".join(self.command)
+    	return ret
 
-class DelGameEvent(KickerEvent):
-
-    def __init__(self, number):
-        self.number = number
-
-    def processEvent(self, players, games):
-        games[self.number].delete()
-        return 'del game: ' + games[self.number]
+    @staticmethod
+    def from_json(the_json):
+    	assert the_json['type'] == 'AddGameEvent'
+    	return AddGameEvent(the_json['command'].split())
