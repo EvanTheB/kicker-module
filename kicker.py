@@ -8,6 +8,7 @@ from willie.module import commands, interval
 from willie.config import ConfigurationError
 from willie.logger import get_logger
 
+import json
 
 def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
@@ -19,18 +20,18 @@ def kicker_command(bot, trigger):
     bot.memory['kicker_manager'].kicker_command(bot, trigger)
 
 
-def do_ranker(players):
+def do_ranker(players, score_a, score_b):
     ELO_ranker(players)
 
 
-def basic_ranker(players):
+def basic_ranker(players, score_a, score_b):
     for p in players[0:2]:
-        players.rank += 1
+        players.rank += score_a - score_b
     for p in players[2:4]:
-        players.rank -= 1
+        players.rank -= score_b - score_a
 
 
-def ELO_ranker(players):
+def ELO_ranker(players, score_a, score_b):
     "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
     K = 50
 
@@ -40,9 +41,10 @@ def ELO_ranker(players):
     R2 = 10 ** (r2 / 400)
     E1 = R1 / (R1 + R2)
     E2 = R2 / (R1 + R2)
-    rd1 = r1 + K * (1 - E1)
-    rd2 = r2 + K * (0 - E2)
+    rd1 = r1 + K * (score_a - E1)
+    rd2 = r2 + K * (score_b - E2)
 
+    # Not quite accurate reversal of formula. Good enough?
     delta1 = (
         rd1 ** 2 - players[0].rank * players[1].rank) / (players[0].rank + players[1].rank)
     delta2 = (
@@ -61,6 +63,12 @@ class KickerManager:
         self.games = {}
         self.bot = bot
         self.events = []
+        with open('kicker.log', 'r') as log:
+            kicker_log = json.load(log)
+        self._load_from_log(kicker_log)
+
+    def _load_from_log(log):
+        pass
 
     def _add_event(self, event, print_reply=False):
         self.events.append(event)
@@ -75,10 +83,11 @@ class KickerManager:
         self._add_event(AddGameEvent(command), print_reply=True)
 
     def _show_ladder(self, bot):
-        bot.say(str(self.players))
-        bot.say(str(self.games))
-        bot.say(str(self.events))
-        ladder = sorted(self.players, key=lambda x: x.rank)
+        # bot.say(str(self.players))
+        # bot.say(str(self.games))
+        # bot.say(str(self.events))
+        ladder = sorted(self.players.values(), key=lambda x: x.rank)
+        ladder.reverse()
         count = 1
         for p in ladder:
             bot.say("{}: {}, {}".format(count, p.name, p.rank))
@@ -115,7 +124,6 @@ class KickerPlayer:
 
 
 class KickerGame:
-
     def __init__(self, commandString):
         self.command = commandString
 
@@ -124,6 +132,15 @@ class KickerGame:
         self.players.append(commandString[1])
         self.players.append(commandString[3])
         self.players.append(commandString[4])
+
+        if commandString[2] == 'beat':
+            self.score = 2
+        elif commandString[2] == 'draw':
+            self.score = 1
+        elif commandString[2] == 'lost':
+            self.score = 0
+        else:
+            print 'fail game init'
 
         self.deleted = False
 
@@ -180,7 +197,7 @@ class AddGameEvent(KickerEvent):
                 return 'fail'
             real_players.append(players[p])
 
-        do_ranker(real_players)
+        do_ranker(real_players, self.game.score, 2 - self.game.score)
 
         games[len(games) + 1] = self.game
         return 'add game: ' + str(self.game)

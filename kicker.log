@@ -1,0 +1,13 @@
+{
+    "events":
+    [
+        {
+            "type":"AddPlayerEvent",
+            "name":"evan"
+        },
+        {
+            "type":"AddGameEvent",
+            "command_string":"evan billy beat nick andy"
+        }
+    ]
+}
