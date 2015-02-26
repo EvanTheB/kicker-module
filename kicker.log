@@ -1,9 +1,28 @@
 {
-    "events":
-    [
+    "events": [
         {
-            "type":"AddPlayerEvent",
-            "player":"evan"
+            "player": "evan",
+            "type": "AddPlayerEvent"
         },
+        {
+            "player": "nick",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "andy",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "william",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "andy evan draw nick william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy evan",
+            "type": "AddGameEvent"
+        }
     ]
 }

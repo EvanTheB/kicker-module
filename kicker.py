@@ -86,7 +86,7 @@ class KickerManager:
         self.games = {}
         self.bot = bot
         self.events = []
-        with open('kicker.log', 'r') as log:
+        with open('/home/ebenn/.willie/modules/kicker.log', 'r') as log:
             kicker_log = json.load(log)
         self._load_from_log(kicker_log)
         self.save_to_log()
@@ -104,6 +104,7 @@ class KickerManager:
     def _add_event(self, event, print_reply=False):
         self.events.append(event)
         reply = self.events[-1].processEvent(self.players, self.games)
+        self.save_to_log()
         # if print_reply:
         # self.bot.say(reply)
 
@@ -112,7 +113,7 @@ class KickerManager:
   		to_save['events'] = []
   		for e in self.events:
   			to_save['events'].append(e.to_json())
-  		with open('kicker.log', 'w') as log:
+  		with open('/home/ebenn/.willie/modules/kicker.log', 'w') as log:
   			json.dump(
             	to_save,
             	log,
@@ -137,6 +138,8 @@ class KickerManager:
             bot.say("{}: {}, {}".format(count, p.name, p.rank))
             count += 1
 
+    def _show_history(self, bot):
+
     def kicker_command(self, bot, command):
         print command
         if command[1] == 'add':
@@ -147,6 +150,9 @@ class KickerManager:
 
         elif command[1] == 'ladder':
             self._show_ladder(bot)
+
+        elif command[1] == 'history':
+            self._show_history(bot)
 
         else:
             bot.say('bad command')
