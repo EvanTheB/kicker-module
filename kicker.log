@@ -23,6 +23,22 @@
         {
             "command": "nick william beat andy evan",
             "type": "AddGameEvent"
+        },
+        {
+            "player": "mark",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "chris",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "mark nick beat chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick lost william andy",
+            "type": "AddGameEvent"
         }
     ]
 }
