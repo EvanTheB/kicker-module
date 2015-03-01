@@ -51,43 +51,19 @@ def ELO_ranker(players, score_a, score_b):
     "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
     K = 50
 
-    r1 = (players[0].rank * players[1].rank) ** 0.5
-    r2 = (players[2].rank * players[3].rank) ** 0.5
+    r1 = (players[0].rank + players[1].rank) * 0.5
+    r2 = (players[2].rank + players[3].rank) * 0.5
     R1 = 10 ** (r1 / 400)
     R2 = 10 ** (r2 / 400)
     E1 = R1 / (R1 + R2)
     E2 = R2 / (R1 + R2)
-    rd1 = r1 + K * (score_a * 1.0 / (score_a + score_b) - E1)
-    rd2 = r2 + K * (score_b * 1.0 / (score_a + score_b) - E2)
+    rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
+    rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
 
-    # smart bin search way of doing it?
-    # sqrt((a+d)(b+d)) = c
-    # d(b+a+d)=c^2
-    def cloj(a, b, c):
-        return lambda d: (c ** 2 - a * b) - d * a - d * b - d * d
-
-        def bin_s(func, g_min, g_max):
-            ans = func((g_min - g_min) / 2)
-            while(abs(ans) > 0.1):
-                if ans > 0:
-                    g_max = (g_min - g_min) / 2
-                else:
-                    g_min = (g_min - g_min) / 2
-                ans = func((g_min - g_min) / 2)
-            return ans
-
-        print "cloj:", bin_s(cloj(players[0].rank, players[1].rank, rd1), 0, 2000)
-
-    # Not quite accurate reversal of formula. Good enough?
-    delta1 = (
-        (rd1 ** 2 - players[0].rank * players[1].rank)) / (players[0].rank + players[1].rank)
-    delta2 = (
-        (rd2 ** 2 - players[2].rank * players[3].rank)) / (players[2].rank + players[3].rank)
-
-    players[0].rank += delta1
-    players[1].rank += delta1
-    players[2].rank += delta2
-    players[3].rank += delta2
+    players[0].rank += rd1
+    players[1].rank += rd1
+    players[2].rank += rd2
+    players[3].rank += rd2
 
 
 class KickerManager:
@@ -265,3 +241,11 @@ class AddGameEvent(KickerEvent):
     def from_json(the_json):
         assert the_json['type'] == 'AddGameEvent'
         return AddGameEvent(the_json['command'].split())
+
+if __name__ == '__main__':
+    class Bot:
+        def say(self, x):
+            print x
+    bot = Bot()
+    k = KickerManager(bot)
+    k.kicker_command(bot, ["", "ladder"])
