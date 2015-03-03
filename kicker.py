@@ -15,7 +15,7 @@ try:
         Commands:
             add <player>
             game <player> <player> (beat)|(lost)|(draw) <player> <player>
-            ladder
+            ladder [(basic)|(ELO [K])]
             history
         """
         print trigger.nick, trigger.match.string
@@ -36,58 +36,71 @@ def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
 
 
-def do_ranker(players, score_a, score_b):
-    ELO_ranker(players, score_a, score_b)
-
-
 def basic_ranker(players, score_a, score_b):
+    for p in players:
+        p.games += 1
+        if p.rank is None:
+            p.rank = 0
     for p in players[0:2]:
-        players.rank += score_a - score_b
+        p.rank += score_a - score_b
     for p in players[2:4]:
-        players.rank -= score_b - score_a
+        p.rank += score_b - score_a
 
 
-def ELO_ranker(players, score_a, score_b):
-    "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-    K = 50
+def ELO_with_K(K=50):
 
-    r1 = (players[0].rank * players[1].rank) ** 0.5
-    r2 = (players[2].rank * players[3].rank) ** 0.5
-    R1 = 10 ** (r1 / 400)
-    R2 = 10 ** (r2 / 400)
-    E1 = R1 / (R1 + R2)
-    E2 = R2 / (R1 + R2)
-    rd1 = r1 + K * (score_a * 1.0 / (score_a + score_b) - E1)
-    rd2 = r2 + K * (score_b * 1.0 / (score_a + score_b) - E2)
+    def ELO_ranker(players, score_a, score_b):
+        """
+        Do an ELO rank with made up stuff for the 2 player bit.
+        players is array of 4.
+        score_a is for team of players[0:2]
+        score_b is for team of players[2:4]
+        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
+        """
+        for p in players:
+            p.games += 1
+            if p.rank is None:
+                p.rank = 1000
 
-    # smart bin search way of doing it?
-    # sqrt((a+d)(b+d)) = c
-    # d(b+a+d)=c^2
-    def cloj(a, b, c):
-        return lambda d: (c ** 2 - a * b) - d * a - d * b - d * d
+        r1 = (players[0].rank * players[1].rank) ** 0.5
+        r2 = (players[2].rank * players[3].rank) ** 0.5
+        R1 = 10 ** (r1 / 400)
+        R2 = 10 ** (r2 / 400)
+        E1 = R1 / (R1 + R2)
+        E2 = R2 / (R1 + R2)
+        rd1 = r1 + K * (score_a * 1.0 / (score_a + score_b) - E1)
+        rd2 = r2 + K * (score_b * 1.0 / (score_a + score_b) - E2)
 
-        def bin_s(func, g_min, g_max):
-            ans = func((g_min - g_min) / 2)
-            while(abs(ans) > 0.1):
-                if ans > 0:
-                    g_max = (g_min - g_min) / 2
-                else:
-                    g_min = (g_min - g_min) / 2
+        # smart bin search way of doing it?
+        # sqrt((a+d)(b+d)) = c
+        # d(b+a+d)=c^2
+        def cloj(a, b, c):
+            return lambda d: (c ** 2 - a * b) - d * a - d * b - d * d
+
+            def bin_s(func, g_min, g_max):
                 ans = func((g_min - g_min) / 2)
-            return ans
+                while(abs(ans) > 0.1):
+                    if ans > 0:
+                        g_max = (g_min - g_min) / 2
+                    else:
+                        g_min = (g_min - g_min) / 2
+                    ans = func((g_min - g_min) / 2)
+                return ans
 
-        print "cloj:", bin_s(cloj(players[0].rank, players[1].rank, rd1), 0, 2000)
+            print "cloj:", bin_s(cloj(players[0].rank, players[1].rank, rd1), 0, 2000)
 
-    # Not quite accurate reversal of formula. Good enough?
-    delta1 = (
-        (rd1 ** 2 - players[0].rank * players[1].rank)) / (players[0].rank + players[1].rank)
-    delta2 = (
-        (rd2 ** 2 - players[2].rank * players[3].rank)) / (players[2].rank + players[3].rank)
+        # Not quite accurate reversal of formula. Good enough?
+        delta1 = (
+            (rd1 ** 2 - players[0].rank * players[1].rank)) / (players[0].rank + players[1].rank)
+        delta2 = (
+            (rd2 ** 2 - players[2].rank * players[3].rank)) / (players[2].rank + players[3].rank)
 
-    players[0].rank += delta1
-    players[1].rank += delta1
-    players[2].rank += delta2
-    players[3].rank += delta2
+        players[0].rank += delta1
+        players[1].rank += delta1
+        players[2].rank += delta2
+        players[3].rank += delta2
+
+    return ELO_ranker
 
 
 class KickerManager:
@@ -133,44 +146,66 @@ class KickerManager:
                 indent=4,
                 separators=(',', ': '))
 
-    def _add_player(self, name):
-        self._add_event(AddPlayerEvent(name), reply_bot=True)
+    def _add_player(self, bot, command):
+        for n in command:
+            self._add_event(AddPlayerEvent(n), reply_bot=bot)
         self.save_to_log()
 
-    def _add_game(self, command):
-        self._add_event(AddGameEvent(command), reply_bot=True)
+    def _add_game(self, bot, command):
+        self._add_event(AddGameEvent(command), reply_bot=bot)
         self.save_to_log()
 
-    def _show_ladder(self, bot):
+    def _show_ladder(self, bot, command):
         # bot.say(str(self.players))
         # bot.say(str(self.games))
         # bot.say(str(self.events))
+        ranker = ELO_with_K(K=50)
+        if len(command) > 0:
+            if command[0] == 'ELO':
+                if len(command) > 1:
+                    ranker = ELO_with_K(K=int(command[1]))
+                else:
+                    ranker = ELO_with_K()
+            elif command[0] == 'basic':
+                ranker = basic_ranker
+
+        for p in self.players.values():
+            p.rank = None
+            p.games = 0
+        for g in sorted(self.games.items()):
+            g[1].process_game(self.players, ranker)
+
         ladder = sorted(
             self.players.values(),
             key=lambda x: x.rank,
             reverse=True)
         count = 1
+
+        bot.say("rank: name, value, games")
         for p in ladder:
-            bot.say("{}: {}, {}".format(count, p.name, p.rank))
+            bot.say(
+                "{}: {}, {}, {}".format(
+                    count, p.name, int(
+                        p.rank), p.games))
             count += 1
 
-    def _show_history(self, bot):
+    def _show_history(self, bot, command):
         bot.say("games:")
         for g in sorted(self.games.items()):
             bot.say("{}: {}".format(g[0], str(g[1])))
 
     def kicker_command(self, bot, command):
         if command[1] == 'add':
-            self._add_player(command[2])
+            self._add_player(bot, command[2:])
 
         elif command[1] == 'game':
-            self._add_game(command[2:])
+            self._add_game(bot, command[2:])
 
         elif command[1] == 'ladder':
-            self._show_ladder(bot)
+            self._show_ladder(bot, command[2:])
 
         elif command[1] == 'history':
-            self._show_history(bot)
+            self._show_history(bot, command[2:])
 
         else:
             bot.say('bad command')
@@ -206,6 +241,14 @@ class KickerGame:
         else:
             assert False, "beat|draw|lost bad\n{}".format(
                 " ".join(command_words))
+
+    def process_game(self, players, ranker):
+        real_players = []
+        for p in self.player_names:
+            assert p in players, "Player not found: {}".format(p)
+            real_players.append(players[p])
+
+        ranker(real_players, self.score, 2 - self.score)
 
     def __str__(self):
         return " ".join(self.command)
@@ -245,15 +288,8 @@ class AddGameEvent(KickerEvent):
         self.game = KickerGame(command_words)
 
     def processEvent(self, players, games):
-        real_players = []
-        for p in self.game.player_names:
-            assert p in players, "Player not found: {}".format(p)
-            real_players.append(players[p])
-
-        do_ranker(real_players, self.game.score, 2 - self.game.score)
-
         games[len(games) + 1] = self.game
-        return 'add game: ' + str(self.game)
+        return 'added: ' + str(self.game)
 
     def to_json(self):
         ret = {}
