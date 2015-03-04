@@ -47,7 +47,38 @@ def basic_ranker(players, score_a, score_b):
         p.rank += score_b - score_a
 
 
-def ELO_with_K(K=50):
+def ELO_with_K_Arith(K=50):
+
+    def ELO_ranker(players, score_a, score_b):
+        """
+        Do an ELO rank with made up stuff for the 2 player bit.
+        players is array of 4.
+        score_a is for team of players[0:2]
+        score_b is for team of players[2:4]
+        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
+        """
+        for p in players:
+            p.games += 1
+            if p.rank is None:
+                p.rank = 1000
+
+        r1 = (players[0].rank + players[1].rank) * 0.5
+        r2 = (players[2].rank + players[3].rank) * 0.5
+        R1 = 10 ** (r1 / 400)
+        R2 = 10 ** (r2 / 400)
+        E1 = R1 / (R1 + R2)
+        E2 = R2 / (R1 + R2)
+        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
+        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
+
+        players[0].rank += rd1
+        players[1].rank += rd1
+        players[2].rank += rd2
+        players[3].rank += rd2
+
+    return ELO_ranker
+
+def ELO_with_K_Geo(K=50):
 
     def ELO_ranker(players, score_a, score_b):
         """
@@ -68,40 +99,46 @@ def ELO_with_K(K=50):
         R2 = 10 ** (r2 / 400)
         E1 = R1 / (R1 + R2)
         E2 = R2 / (R1 + R2)
-        rd1 = r1 + K * (score_a * 1.0 / (score_a + score_b) - E1)
-        rd2 = r2 + K * (score_b * 1.0 / (score_a + score_b) - E2)
+        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
+        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
 
-        # smart bin search way of doing it?
-        # sqrt((a+d)(b+d)) = c
-        # d(b+a+d)=c^2
-        def cloj(a, b, c):
-            return lambda d: (c ** 2 - a * b) - d * a - d * b - d * d
-
-            def bin_s(func, g_min, g_max):
-                ans = func((g_min - g_min) / 2)
-                while(abs(ans) > 0.1):
-                    if ans > 0:
-                        g_max = (g_min - g_min) / 2
-                    else:
-                        g_min = (g_min - g_min) / 2
-                    ans = func((g_min - g_min) / 2)
-                return ans
-
-            print "cloj:", bin_s(cloj(players[0].rank, players[1].rank, rd1), 0, 2000)
-
-        # Not quite accurate reversal of formula. Good enough?
-        delta1 = (
-            (rd1 ** 2 - players[0].rank * players[1].rank)) / (players[0].rank + players[1].rank)
-        delta2 = (
-            (rd2 ** 2 - players[2].rank * players[3].rank)) / (players[2].rank + players[3].rank)
-
-        players[0].rank += delta1
-        players[1].rank += delta1
-        players[2].rank += delta2
-        players[3].rank += delta2
+        players[0].rank += rd1
+        players[1].rank += rd1
+        players[2].rank += rd2
+        players[3].rank += rd2
 
     return ELO_ranker
 
+def ELO_with_K_Harmonic(K=50):
+
+    def ELO_ranker(players, score_a, score_b):
+        """
+        Do an ELO rank with made up stuff for the 2 player bit.
+        players is array of 4.
+        score_a is for team of players[0:2]
+        score_b is for team of players[2:4]
+        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
+        """
+        for p in players:
+            p.games += 1
+            if p.rank is None:
+                p.rank = 1000
+
+        r1 = 1/(1/players[0].rank + 1/players[0].games + 1/players[1].rank + 1/players[1].games)
+        r2 = 1/(1/players[2].rank + 1/players[2].games + 1/players[3].rank + 1/players[3].games)
+        R1 = 10 ** (r1 / 400)
+        R2 = 10 ** (r2 / 400)
+        E1 = R1 / (R1 + R2)
+        E2 = R2 / (R1 + R2)
+        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
+        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
+
+        players[0].rank += rd1
+        players[1].rank += rd1
+        players[2].rank += rd2
+        players[3].rank += rd2
+
+    return ELO_ranker
 
 class KickerManager:
 
@@ -159,13 +196,13 @@ class KickerManager:
         # bot.say(str(self.players))
         # bot.say(str(self.games))
         # bot.say(str(self.events))
-        ranker = ELO_with_K(K=50)
+        ranker = ELO_with_K_Arith(K=50)
         if len(command) > 0:
             if command[0] == 'ELO':
                 if len(command) > 1:
-                    ranker = ELO_with_K(K=int(command[1]))
+                    ranker = ELO_with_K_Arith(K=int(command[1]))
                 else:
-                    ranker = ELO_with_K()
+                    ranker = ELO_with_K_Arith()
             elif command[0] == 'basic':
                 ranker = basic_ranker
 
