@@ -28,6 +28,7 @@ except ImportError as e:
 import json
 import os
 import shutil
+import string
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
@@ -55,31 +56,7 @@ def basic_ranker(players, score_a, score_b):
     for p in players[0:2]:
         p.rank += score_a - score_b
     for p in players[2:4]:
-<<<<<<< HEAD
-        players.rank -= score_b - score_a
-
-
-def ELO_ranker(players, score_a, score_b):
-    "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-    K = 50
-
-    r1 = (players[0].rank + players[1].rank) * 0.5
-    r2 = (players[2].rank + players[3].rank) * 0.5
-    R1 = 10 ** (r1 / 400)
-    R2 = 10 ** (r2 / 400)
-    E1 = R1 / (R1 + R2)
-    E2 = R2 / (R1 + R2)
-    rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
-    rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
-
-    players[0].rank += rd1
-    players[1].rank += rd1
-    players[2].rank += rd2
-    players[3].rank += rd2
-=======
-        p.rank += score_b - score_a
->>>>>>> d73d4fb7be62676e39cd3e65e49a50041474d740
-
+        p.rank -= score_b - score_a
 
 def ELO_with_K_Arith(K=50):
 
@@ -178,7 +155,7 @@ class KickerManager:
 
     def __init__(self, bot):
         self.players = {}
-        self.games = {}
+        self.games = []
         self.events = []
         self.bot = bot
         # Load and backup log file
@@ -226,46 +203,71 @@ class KickerManager:
         self._add_event(AddGameEvent(command), reply_bot=bot)
         self.save_to_log()
 
+    def _pretty_print(self, bot, data_tuples):
+    """
+    This prints the tuples in nice whitespace aligned columns.
+    And is hack.
+    """
+        # widths holds the longest strlen
+        # in the list of tuples for that position
+        widths = [0] * len(data_tuples[0])
+        for i in range(len(widths)):
+            widths[i] = 1 + len(str(max(data_tuples, key=lambda x: len(str(x[i])))[i]))
+        for i in range(len(data_tuples))
+            s = ""
+            for word in data_tuples[i]:
+                s += '{0:>{width}}'.format(w, width=widths[i])
+            bot.say(s)
+
+
+
+
     def _show_ladder(self, bot, command):
         # bot.say(str(self.players))
         # bot.say(str(self.games))
         # bot.say(str(self.events))
-        elo_k = 50
-        ranker = ELO_with_K_Arith(K=elo_k)
-        if len(command) > 0:
-            if command[0] == 'ELO':
-                if len(command) > 1:
-                    elo_k = int(command[1])
-                ranker = ELO_with_K_Arith(K=elo_k)
-            elif command[0] == 'basic':
-                ranker = basic_ranker
-            elif command[0] == 'scaled':
-                ranker = scaled_basic_ranker
+        # elo_k = 50
+        # ranker = ELO_with_K_Arith(K=elo_k)
+        # if len(command) > 0:
+        #     if command[0] == 'ELO':
+        #         if len(command) > 1:
+        #             elo_k = int(command[1])
+        #         ranker = ELO_with_K_Arith(K=elo_k)
+        #     elif command[0] == 'basic':
+        #         ranker = basic_ranker
+        #     elif command[0] == 'scaled':
+        #         ranker = scaled_basic_ranker
 
-        for p in self.players.values():
-            p.rank = None
-            p.games = 0
-        for g in sorted(self.games.items()):
-            g[1].process_game(self.players, ranker)
+        # for p in self.players.values():
+        #     p.rank = None
+        #     p.games = 0
+        # for g in sorted(self.games.items()):
+        #     g[1].process_game(self.players, ranker)
 
-        ladder = sorted(
-            self.players.values(),
-            key=lambda x: x.rank,
-            reverse=True)
-        count = 1
+        # ladder = sorted(
+        #     self.players.values(),
+        #     key=lambda x: x.rank,
+        #     reverse=True)
+        # count = 1
 
-        bot.say("rank: name, value, games")
-        for p in ladder:
-            bot.say(
-                "{}: {}, {}, {}".format(
-                    count, p.name, int(
-                        p.rank), p.games))
-            count += 1
+        # bot.say("rank: name, value, games")
+        # for p in ladder:
+        #     bot.say(
+        #         "{}: {}, {}, {}".format(
+        #             count, p.name, int(
+        #                 p.rank), p.games))
+        #     count += 1
+
+        ladder = BasicLadder()
+        data_tuples = ladder.process(self.players, self.games)
+        self._pretty_print(bot, data_tuples)
 
     def _show_history(self, bot, command):
         bot.say("games:")
-        for g in sorted(self.games.items()):
-            bot.say("{}: {}".format(g[0], str(g[1])))
+        i = 1
+        for g in games:
+            bot.say("{}: {}".format(i, g))
+            g += 1
 
     def kicker_command(self, bot, command):
         if command[1] == 'add':
@@ -296,7 +298,7 @@ class KickerPlayer:
 
 class KickerGame:
 
-    def __init__(self, command_words):
+    def __init__(self, command_words, players):
         self.command = command_words
 
         self.player_names = []
@@ -306,25 +308,75 @@ class KickerGame:
         self.player_names.append(command_words[4])
 
         if command_words[2] == u'beat':
-            self.score = 2
+            self.score_a = 2
         elif command_words[2] == u'draw':
-            self.score = 1
+            self.score_a = 1
         elif command_words[2] == u'lost':
-            self.score = 0
+            self.score_a = 0
         else:
-            assert False, "beat|draw|lost bad\n{}".format(
+            assert False, "beat|draw|lost is bad\n{}".format(
                 " ".join(command_words))
+        self.score_b = 2 - self.score_a
 
-    def process_game(self, players, ranker):
-        real_players = []
-        for p in self.player_names:
+        self.team_a = []
+        self.team_b = []
+        for p in self.player_names[0:2]:
             assert p in players, "Player not found: {}".format(p)
-            real_players.append(players[p])
-
-        ranker(real_players, self.score, 2 - self.score)
+            self.team_a.append(players[p])
+        for p in self.player_names[2:4]:
+            assert p in players, "Player not found: {}".format(p)
+            self.team_b.append(players[p])
 
     def __str__(self):
         return " ".join(self.command)
+
+class KickerLadder:
+
+    def add_game(self, team_a, team_b, score_a, score_b):
+        pass
+
+    def get_ladder(self):
+        pass
+
+class BasicLadder(KickerLadder):
+
+    def __init__(self):
+        pass
+
+    def add_game(self, game):
+        print game
+        for p in game.team_a + game.team_b:
+            p.games += 1
+        for p in game.team_a:
+            p.rank += game.score_a - game.score_b
+        for p in game.team_b:
+            p.rank -= game.score_b - game.score_a
+
+    def process(self, players, games):
+        for p in players.values():
+            p.rank = 0
+            p.games = 0
+
+        for g in games:
+            self.add_game(g)
+
+        ladder = sorted(
+            players.values(),
+            key=lambda x: x.rank,
+            reverse=True)
+
+        ret = []
+        ret.append(("rank", "name", "points", "games"))
+        i = 1
+        for player in ladder:
+            ret.append((
+                i,
+                player.name,
+                player.rank,
+                player.games,
+                ))
+            i += 1
+        return ret
 
 
 class KickerEvent:
@@ -358,11 +410,11 @@ class AddGameEvent(KickerEvent):
 
     def __init__(self, command_words):
         self.command_words = command_words
-        self.game = KickerGame(command_words)
 
     def processEvent(self, players, games):
-        games[len(games) + 1] = self.game
-        return 'added: ' + str(self.game)
+        game = KickerGame(self.command_words, players)
+        games.append(game)
+        return 'added: ' + str(game)
 
     def to_json(self):
         ret = {}
