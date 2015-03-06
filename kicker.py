@@ -204,19 +204,19 @@ class KickerManager:
         self.save_to_log()
 
     def _pretty_print(self, bot, data_tuples):
-    """
-    This prints the tuples in nice whitespace aligned columns.
-    And is hack.
-    """
+        """
+        This prints the tuples in nice whitespace aligned columns.
+        And is hack.
+        """
         # widths holds the longest strlen
         # in the list of tuples for that position
         widths = [0] * len(data_tuples[0])
         for i in range(len(widths)):
             widths[i] = 1 + len(str(max(data_tuples, key=lambda x: len(str(x[i])))[i]))
-        for i in range(len(data_tuples))
+        for i in range(len(data_tuples)):
             s = ""
-            for word in data_tuples[i]:
-                s += '{0:>{width}}'.format(w, width=widths[i])
+            for j in range(len(data_tuples[i])):
+                s += '{0:>{width}}'.format(data_tuples[i][j], width=widths[j])
             bot.say(s)
 
 
@@ -359,6 +359,49 @@ class BasicLadder(KickerLadder):
 
         for g in games:
             self.add_game(g)
+
+        ladder = sorted(
+            players.values(),
+            key=lambda x: x.rank,
+            reverse=True)
+
+        ret = []
+        ret.append(("rank", "name", "points", "games"))
+        i = 1
+        for player in ladder:
+            ret.append((
+                i,
+                player.name,
+                player.rank,
+                player.games,
+                ))
+            i += 1
+        return ret
+
+class BasicScaledLadder(KickerLadder):
+
+    def __init__(self):
+        pass
+
+    def add_game(self, game):
+        print game
+        for p in game.team_a + game.team_b:
+            p.games += 1
+        for p in game.team_a:
+            p.rank += game.score_a - game.score_b
+        for p in game.team_b:
+            p.rank -= game.score_b - game.score_a
+
+    def process(self, players, games):
+        for p in players.values():
+            p.rank = 0
+            p.games = 0
+
+        for g in games:
+            self.add_game(g)
+
+        for p in players.values():
+            p.rank /= p.games
 
         ladder = sorted(
             players.values(),
