@@ -19,7 +19,7 @@ try:
             history
         """
         print trigger.nick, trigger.match.string
-        text = trigger.group().split()
+        text = trigger.group().split()[1:]
         bot.memory['kicker_manager'].kicker_command(bot, text)
 
 except ImportError as e:
@@ -29,6 +29,7 @@ import json
 import os
 import shutil
 import string
+import argparse
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
@@ -80,12 +81,17 @@ class KickerManager:
                 separators=(',', ': '))
 
     def _add_player(self, bot, command):
-        for n in command:
-            self._add_event(AddPlayerEvent(n), reply_bot=bot)
+        for name in command.name:
+            self._add_event(AddPlayerEvent(name), reply_bot=bot)
         self.save_to_log()
 
     def _add_game(self, bot, command):
-        self._add_event(AddGameEvent(command), reply_bot=bot)
+        self._add_event(
+            AddGameEvent(
+                " ".join(command.team_a
+                    + [command.result]
+                    + command.team_b)),
+            reply_bot=bot)
         self.save_to_log()
 
     def _pretty_print(self, bot, data_tuples):
@@ -105,17 +111,20 @@ class KickerManager:
             bot.say(s)
 
     def _show_ladder(self, bot, command):
-        elo_k = 50
-        ladder = ELOLadder(K=elo_k)
-        if len(command) > 0:
-            if command[0] == 'ELO':
-                if len(command) > 1:
-                    elo_k = int(command[1])
-                ladder = ELOLadder(K=elo_k)
-            elif command[0] == 'basic':
-                ladder = BasicLadder()
-            elif command[0] == 'scaled':
-                ladder = BasicLadder()
+        if command.type == 'ELO':
+            elo_k = 50
+            if command.options:
+                try:
+                    elo_k = int(command.options[0])
+                except ValueError:
+                    bot.say("Wanted a number. got {}".format(
+                        command.options[0]))
+                    return
+            ladder = ELOLadder(K=elo_k)
+        elif command.type == 'basic':
+            ladder = BasicLadder()
+        elif command.type == 'scaled':
+            ladder = BasicScaledLadder()
 
         data_tuples = ladder.process(self.players, self.games)
         self._pretty_print(bot, data_tuples)
@@ -123,26 +132,40 @@ class KickerManager:
     def _show_history(self, bot, command):
         bot.say("games:")
         i = 1
-        for g in games:
+        for g in self.games:
             bot.say("{}: {}".format(i, g))
-            g += 1
+            i += 1
 
     def kicker_command(self, bot, command):
-        if command[1] == 'add':
-            self._add_player(bot, command[2:])
+        parser = argparse.ArgumentParser(prog=".kicker")
+        subcommands = parser.add_subparsers()
 
-        elif command[1] == 'game':
-            self._add_game(bot, command[2:])
+        ladder = subcommands.add_parser('ladder')
+        ladder.add_argument('type',
+            type=str,
+            choices=['ELO', 'basic', 'scaled'],
+            default='ELO',
+            nargs='?',
+            )
+        ladder.add_argument('options', nargs='*')
+        ladder.set_defaults(func=self._show_ladder)
 
-        elif command[1] == 'ladder':
-            self._show_ladder(bot, command[2:])
+        add = subcommands.add_parser('add')
+        add.add_argument('name', type=str)
+        add.set_defaults(func=self._add_player)
 
-        elif command[1] == 'history':
-            self._show_history(bot, command[2:])
+        game = subcommands.add_parser('game')
+        game.add_argument('team_a', type=str, nargs=2)
+        game.add_argument('result', type=str,
+            choices=['beat', 'draw', 'lost'])
+        game.add_argument('team_b', type=str, nargs=2)
+        game.set_defaults(func=self._add_game)
 
-        else:
-            bot.say('bad command')
+        history = subcommands.add_parser('history')
+        history.set_defaults(func=self._show_history)
 
+        args = parser.parse_args(command)
+        args.func(bot, args)
 
 class KickerPlayer:
 
@@ -402,4 +425,8 @@ if __name__ == '__main__':
             print x
     bot = Bot()
     k = KickerManager(bot)
-    k.kicker_command(bot, ["", "ladder"])
+    # k.kicker_command(bot, ["-h"])
+    k.kicker_command(bot, ["ladder", "ELO", "60"])
+    k.kicker_command(bot, ["ladder"])
+    k.kicker_command(bot, ["history"])
+    k.kicker_command(bot, ["ladder", "-h"])
