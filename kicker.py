@@ -36,121 +36,6 @@ LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
 
-def scaled_basic_ranker(players, score_a, score_b):
-    for p in players:
-        p.games += 1
-        if p.rank is None:
-            p.rank = 0
-    for p in players[0:2]:
-        p.rank = p.rank * (p.games - 1) + (score_a - score_b)
-        p.rank /= p.games
-    for p in players[2:4]:
-        p.rank = p.rank * (p.games - 1) + (score_b - score_a)
-        p.rank /= p.games
-
-def basic_ranker(players, score_a, score_b):
-    for p in players:
-        p.games += 1
-        if p.rank is None:
-            p.rank = 0
-    for p in players[0:2]:
-        p.rank += score_a - score_b
-    for p in players[2:4]:
-        p.rank -= score_b - score_a
-
-def ELO_with_K_Arith(K=50):
-
-    def ELO_ranker(players, score_a, score_b):
-        """
-        Do an ELO rank with made up stuff for the 2 player bit.
-        players is array of 4.
-        score_a is for team of players[0:2]
-        score_b is for team of players[2:4]
-        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-        """
-        for p in players:
-            p.games += 1
-            if p.rank is None:
-                p.rank = 1000
-
-        r1 = (players[0].rank + players[1].rank) * 0.5
-        r2 = (players[2].rank + players[3].rank) * 0.5
-        R1 = 10 ** (r1 / 400)
-        R2 = 10 ** (r2 / 400)
-        E1 = R1 / (R1 + R2)
-        E2 = R2 / (R1 + R2)
-        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
-        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
-
-        players[0].rank += rd1
-        players[1].rank += rd1
-        players[2].rank += rd2
-        players[3].rank += rd2
-
-    return ELO_ranker
-
-def ELO_with_K_Geo(K=50):
-
-    def ELO_ranker(players, score_a, score_b):
-        """
-        Do an ELO rank with made up stuff for the 2 player bit.
-        players is array of 4.
-        score_a is for team of players[0:2]
-        score_b is for team of players[2:4]
-        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-        """
-        for p in players:
-            p.games += 1
-            if p.rank is None:
-                p.rank = 1000
-
-        r1 = (players[0].rank * players[1].rank) ** 0.5
-        r2 = (players[2].rank * players[3].rank) ** 0.5
-        R1 = 10 ** (r1 / 400)
-        R2 = 10 ** (r2 / 400)
-        E1 = R1 / (R1 + R2)
-        E2 = R2 / (R1 + R2)
-        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
-        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
-
-        players[0].rank += rd1
-        players[1].rank += rd1
-        players[2].rank += rd2
-        players[3].rank += rd2
-
-    return ELO_ranker
-
-def ELO_with_K_Harmonic(K=50):
-
-    def ELO_ranker(players, score_a, score_b):
-        """
-        Do an ELO rank with made up stuff for the 2 player bit.
-        players is array of 4.
-        score_a is for team of players[0:2]
-        score_b is for team of players[2:4]
-        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-        """
-        for p in players:
-            p.games += 1
-            if p.rank is None:
-                p.rank = 1000
-
-        r1 = 1/(1/players[0].rank + 1/players[0].games + 1/players[1].rank + 1/players[1].games)
-        r2 = 1/(1/players[2].rank + 1/players[2].games + 1/players[3].rank + 1/players[3].games)
-        R1 = 10 ** (r1 / 400)
-        R2 = 10 ** (r2 / 400)
-        E1 = R1 / (R1 + R2)
-        E2 = R2 / (R1 + R2)
-        rd1 = K * (score_a * 1.0 / (score_a + score_b) - E1)
-        rd2 = K * (score_b * 1.0 / (score_a + score_b) - E2)
-
-        players[0].rank += rd1
-        players[1].rank += rd1
-        players[2].rank += rd2
-        players[3].rank += rd2
-
-    return ELO_ranker
-
 class KickerManager:
 
     def __init__(self, bot):
@@ -219,46 +104,19 @@ class KickerManager:
                 s += '{0:>{width}}'.format(data_tuples[i][j], width=widths[j])
             bot.say(s)
 
-
-
-
     def _show_ladder(self, bot, command):
-        # bot.say(str(self.players))
-        # bot.say(str(self.games))
-        # bot.say(str(self.events))
-        # elo_k = 50
-        # ranker = ELO_with_K_Arith(K=elo_k)
-        # if len(command) > 0:
-        #     if command[0] == 'ELO':
-        #         if len(command) > 1:
-        #             elo_k = int(command[1])
-        #         ranker = ELO_with_K_Arith(K=elo_k)
-        #     elif command[0] == 'basic':
-        #         ranker = basic_ranker
-        #     elif command[0] == 'scaled':
-        #         ranker = scaled_basic_ranker
+        elo_k = 50
+        ladder = ELOLadder(K=elo_k)
+        if len(command) > 0:
+            if command[0] == 'ELO':
+                if len(command) > 1:
+                    elo_k = int(command[1])
+                ladder = ELOLadder(K=elo_k)
+            elif command[0] == 'basic':
+                ladder = BasicLadder()
+            elif command[0] == 'scaled':
+                ladder = BasicLadder()
 
-        # for p in self.players.values():
-        #     p.rank = None
-        #     p.games = 0
-        # for g in sorted(self.games.items()):
-        #     g[1].process_game(self.players, ranker)
-
-        # ladder = sorted(
-        #     self.players.values(),
-        #     key=lambda x: x.rank,
-        #     reverse=True)
-        # count = 1
-
-        # bot.say("rank: name, value, games")
-        # for p in ladder:
-        #     bot.say(
-        #         "{}: {}, {}, {}".format(
-        #             count, p.name, int(
-        #                 p.rank), p.games))
-        #     count += 1
-
-        ladder = BasicLadder()
         data_tuples = ladder.process(self.players, self.games)
         self._pretty_print(bot, data_tuples)
 
@@ -344,7 +202,6 @@ class BasicLadder(KickerLadder):
         pass
 
     def add_game(self, game):
-        print game
         for p in game.team_a + game.team_b:
             p.games += 1
         for p in game.team_a:
@@ -362,7 +219,7 @@ class BasicLadder(KickerLadder):
 
         ladder = sorted(
             players.values(),
-            key=lambda x: x.rank,
+            key=lambda x: (x.rank, x.games),
             reverse=True)
 
         ret = []
@@ -384,7 +241,6 @@ class BasicScaledLadder(KickerLadder):
         pass
 
     def add_game(self, game):
-        print game
         for p in game.team_a + game.team_b:
             p.games += 1
         for p in game.team_a:
@@ -400,25 +256,95 @@ class BasicScaledLadder(KickerLadder):
         for g in games:
             self.add_game(g)
 
-        for p in players.values():
-            p.rank /= p.games
-
         ladder = sorted(
             players.values(),
-            key=lambda x: x.rank,
+            key=lambda x: (x.rank/x.games, x.games),
             reverse=True)
 
         ret = []
-        ret.append(("rank", "name", "points", "games"))
+        ret.append(("rank", "name", "points/game"))
         i = 1
         for player in ladder:
             ret.append((
                 i,
                 player.name,
-                player.rank,
-                player.games,
+                player.rank / player.games,
                 ))
             i += 1
+        return ret
+
+class ArithmeticMean:
+    def combine(self, ranks):
+        return sum(ranks) * 0.5
+
+    def uncombine(self, val):
+        return val
+
+class GeometricMean:
+    def combine(self, ranks):
+        return reduce(lambda a,b: a*b, ranks) ** (1.0 / len(ranks))
+
+    def uncombine(self, val):
+        return val
+
+class HarmonicMean:
+    def combine(self, ranks):
+        return reduce(lambda a,b: 1.0/(1.0/a+1.0/b), ranks)
+
+    def uncombine(self, val):
+        return val
+
+class ELOLadder(KickerLadder):
+
+    def __init__(self, K=50, combiner=ArithmeticMean()):
+        self.K = K
+        self.combiner=combiner
+
+    def add_game(self, game):
+        """
+        Do an ELO rank with made up stuff for the 2 player bit.
+        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
+        """
+        for p in game.team_a + game.team_b:
+            p.games += 1
+
+        r1 = self.combiner.combine([r.rank for r in game.team_a])
+        r2 = self.combiner.combine([r.rank for r in game.team_b])
+        R1 = 10 ** (r1 / 400)
+        R2 = 10 ** (r2 / 400)
+        E1 = R1 / (R1 + R2)
+        E2 = R2 / (R1 + R2)
+        total_score = game.score_a + game.score_b
+        rd1 = self.K * (game.score_a * 1.0 / total_score - E1)
+        rd2 = self.K * (game.score_b * 1.0 / total_score - E2)
+
+        for p in game.team_a:
+            p.rank += self.combiner.uncombine(rd1)
+        for p in game.team_b:
+            p.rank += self.combiner.uncombine(rd2)
+
+    def process(self, players, games):
+        for p in players.values():
+            p.rank = 1000
+            p.games = 0
+
+        for g in games:
+            self.add_game(g)
+
+        ladder = sorted(
+            players.values(),
+            key=lambda x: (x.rank, x.games),
+            reverse=True)
+
+        ret = []
+        ret.append(("rank", "name", "ELO", "games"))
+        for i in range(len(ladder)):
+            ret.append((
+                i,
+                ladder[i].name,
+                int(ladder[i].rank),
+                ladder[i].games
+                ))
         return ret
 
 
