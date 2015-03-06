@@ -35,6 +35,17 @@ LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
 
+def scaled_basic_ranker(players, score_a, score_b):
+    for p in players:
+        p.games += 1
+        if p.rank is None:
+            p.rank = 0
+    for p in players[0:2]:
+        p.rank = p.rank * (p.games - 1) + (score_a - score_b)
+        p.rank /= p.games
+    for p in players[2:4]:
+        p.rank = p.rank * (p.games - 1) + (score_b - score_a)
+        p.rank /= p.games
 
 def basic_ranker(players, score_a, score_b):
     for p in players:
@@ -196,15 +207,17 @@ class KickerManager:
         # bot.say(str(self.players))
         # bot.say(str(self.games))
         # bot.say(str(self.events))
-        ranker = ELO_with_K_Arith(K=50)
+        elo_k = 50
+        ranker = ELO_with_K_Arith(K=elo_k)
         if len(command) > 0:
             if command[0] == 'ELO':
                 if len(command) > 1:
-                    ranker = ELO_with_K_Arith(K=int(command[1]))
-                else:
-                    ranker = ELO_with_K_Arith()
+                    elo_k = int(command[1])
+                ranker = ELO_with_K_Arith(K=elo_k)
             elif command[0] == 'basic':
                 ranker = basic_ranker
+            elif command[0] == 'scaled':
+                ranker = scaled_basic_ranker
 
         for p in self.players.values():
             p.rank = None
