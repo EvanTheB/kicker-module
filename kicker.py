@@ -28,14 +28,15 @@ except ImportError as e:
 import json
 import os
 import shutil
-import string
 import argparse
+import trueskill
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
 
 def setup(bot):
     bot.memory['kicker_manager'] = KickerManager(bot)
+
 
 class KickerManager:
 
@@ -89,8 +90,8 @@ class KickerManager:
         self._add_event(
             AddGameEvent(
                 " ".join(command.team_a
-                    + [command.result]
-                    + command.team_b)),
+                         + [command.result]
+                         + command.team_b)),
             reply_bot=bot)
         self.save_to_log()
 
@@ -103,7 +104,8 @@ class KickerManager:
         # in the list of tuples for that position
         widths = [0] * len(data_tuples[0])
         for i in range(len(widths)):
-            widths[i] = 1 + len(str(max(data_tuples, key=lambda x: len(str(x[i])))[i]))
+            widths[i] = 1 + \
+                len(str(max(data_tuples, key=lambda x: len(str(x[i])))[i]))
         for i in range(len(data_tuples)):
             s = ""
             for j in range(len(data_tuples[i])):
@@ -125,6 +127,8 @@ class KickerManager:
             ladder = BasicLadder()
         elif command.type == 'scaled':
             ladder = BasicScaledLadder()
+        elif command.type == 'trueskill':
+            ladder = TrueSkillLadder()
 
         data_tuples = ladder.process(self.players, self.games)
         self._pretty_print(bot, data_tuples)
@@ -142,11 +146,11 @@ class KickerManager:
 
         ladder = subcommands.add_parser('ladder')
         ladder.add_argument('type',
-            type=str,
-            choices=['ELO', 'basic', 'scaled'],
-            default='ELO',
-            nargs='?',
-            )
+                            type=str,
+                            choices=['ELO', 'basic', 'scaled', 'trueskill'],
+                            default='ELO',
+                            nargs='?',
+                            )
         ladder.add_argument('options', nargs='*')
         ladder.set_defaults(func=self._show_ladder)
 
@@ -157,7 +161,7 @@ class KickerManager:
         game = subcommands.add_parser('game')
         game.add_argument('team_a', type=str, nargs=2)
         game.add_argument('result', type=str,
-            choices=['beat', 'draw', 'lost'])
+                          choices=['beat', 'draw', 'lost'])
         game.add_argument('team_b', type=str, nargs=2)
         game.set_defaults(func=self._add_game)
 
@@ -167,14 +171,14 @@ class KickerManager:
         args = parser.parse_args(command)
         args.func(bot, args)
 
+
 class KickerPlayer:
 
     def __init__(self, name):
         self.name = name
-        self.rank = 1000
 
     def __str__(self):
-        return 'Player: {}, {}'.format(self.name, self.rank)
+        return 'Player: {}'.format(self.name)
 
 
 class KickerGame:
@@ -211,13 +215,12 @@ class KickerGame:
     def __str__(self):
         return " ".join(self.command)
 
+
 class KickerLadder:
 
-    def add_game(self, team_a, team_b, score_a, score_b):
+    def process(self, players, games):
         pass
 
-    def get_ladder(self):
-        pass
 
 class BasicLadder(KickerLadder):
 
@@ -254,9 +257,10 @@ class BasicLadder(KickerLadder):
                 player.name,
                 player.rank,
                 player.games,
-                ))
+            ))
             i += 1
         return ret
+
 
 class BasicScaledLadder(KickerLadder):
 
@@ -281,7 +285,7 @@ class BasicScaledLadder(KickerLadder):
 
         ladder = sorted(
             players.values(),
-            key=lambda x: (x.rank/x.games, x.games),
+            key=lambda x: (x.rank / x.games, x.games),
             reverse=True)
 
         ret = []
@@ -292,36 +296,43 @@ class BasicScaledLadder(KickerLadder):
                 i,
                 player.name,
                 player.rank / player.games,
-                ))
+            ))
             i += 1
         return ret
 
+
 class ArithmeticMean:
+
     def combine(self, ranks):
         return sum(ranks) * 0.5
 
     def uncombine(self, val):
         return val
 
+
 class GeometricMean:
+
     def combine(self, ranks):
-        return reduce(lambda a,b: a*b, ranks) ** (1.0 / len(ranks))
+        return reduce(lambda a, b: a * b, ranks) ** (1.0 / len(ranks))
 
     def uncombine(self, val):
         return val
+
 
 class HarmonicMean:
+
     def combine(self, ranks):
-        return reduce(lambda a,b: 1.0/(1.0/a+1.0/b), ranks)
+        return reduce(lambda a, b: 1.0 / (1.0 / a + 1.0 / b), ranks)
 
     def uncombine(self, val):
         return val
+
 
 class ELOLadder(KickerLadder):
 
     def __init__(self, K=50, combiner=ArithmeticMean()):
         self.K = K
-        self.combiner=combiner
+        self.combiner = combiner
 
     def add_game(self, game):
         """
@@ -363,11 +374,58 @@ class ELOLadder(KickerLadder):
         ret.append(("rank", "name", "ELO", "games"))
         for i in range(len(ladder)):
             ret.append((
-                i,
+                i+1,
                 ladder[i].name,
                 int(ladder[i].rank),
                 ladder[i].games
-                ))
+            ))
+        return ret
+
+
+class TrueSkillLadder(KickerLadder):
+
+    """
+    ref:
+    http://trueskill.org/
+    http://blogs.technet.com/b/apg/archive/2008/06/16/trueskill-in-f.aspx
+    http://www.moserware.com/2010/03/computing-your-skill.html
+    https://github.com/moserware/Skills
+    """
+
+    def __init__(self, mu=25.0, sigma=25.0 / 3):
+        self.mu = mu
+        self.sigma = sigma
+
+    def add_game(self, game):
+        for p in game.team_a + game.team_b:
+            p.games += 1
+        trueskill.calculate_NvN(
+            game.team_a, game.team_b, game.score_a, game.score_b)
+
+    def process(self, players, games):
+        for p in players.values():
+            p.mu = self.mu
+            p.sigma = self.sigma
+            p.games = 0
+
+        for g in games:
+            self.add_game(g)
+
+        ladder = sorted(
+            players.values(),
+            key=lambda x: (x.mu - 3 * x.sigma),
+            reverse=True)
+
+        ret = []
+        ret.append(("rank", "name", "lvl", "mu", "sigma"))
+        for i in range(len(ladder)):
+            ret.append((
+                i+1,
+                ladder[i].name,
+                int(ladder[i].mu - 3 * ladder[i].sigma),
+                ladder[i].mu,
+                ladder[i].sigma
+            ))
         return ret
 
 
@@ -421,12 +479,14 @@ class AddGameEvent(KickerEvent):
 
 if __name__ == '__main__':
     class Bot:
+
         def say(self, x):
             print x
     bot = Bot()
     k = KickerManager(bot)
     # k.kicker_command(bot, ["-h"])
-    k.kicker_command(bot, ["ladder", "ELO", "60"])
+    # k.kicker_command(bot, ["ladder", "ELO", "60"])
     k.kicker_command(bot, ["ladder"])
-    k.kicker_command(bot, ["history"])
-    k.kicker_command(bot, ["ladder", "-h"])
+    # k.kicker_command(bot, ["history"])
+    # k.kicker_command(bot, ["ladder", "-h"])
+    k.kicker_command(bot, ["ladder", "trueskill"])
