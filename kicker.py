@@ -87,11 +87,14 @@ class KickerManager:
         self.save_to_log()
 
     def _add_game(self, bot, command):
+        print " ".join(command.team_a
+                         + [command.result]
+                         + command.team_b)
         self._add_event(
             AddGameEvent(
-                " ".join(command.team_a
+                command.team_a
                          + [command.result]
-                         + command.team_b)),
+                         + command.team_b),
             reply_bot=bot)
         self.save_to_log()
 
@@ -155,7 +158,7 @@ class KickerManager:
         ladder.set_defaults(func=self._show_ladder)
 
         add = subcommands.add_parser('add')
-        add.add_argument('name', type=str)
+        add.add_argument('name', type=str, nargs='+')
         add.set_defaults(func=self._add_player)
 
         game = subcommands.add_parser('game')
@@ -199,7 +202,7 @@ class KickerGame:
         elif command_words[2] == u'lost':
             self.score_a = 0
         else:
-            assert False, "beat|draw|lost is bad\n{}".format(
+            assert False, "beat|draw|lost is bad: {}".format(
                 " ".join(command_words))
         self.score_b = 2 - self.score_a
 

@@ -39,6 +39,54 @@
         {
             "command": "evan nick lost william andy",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "evan william beat nick chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "tim",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan tim draw andy chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "celine",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "william chris beat celine tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick chris draw evan william",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "rowan",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "yen",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "yen rowan beat mark evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william tim draw nick chris",
+            "type": "AddGameEvent"
         }
     ]
 }
