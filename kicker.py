@@ -29,6 +29,8 @@ import json
 import os
 import shutil
 import argparse
+import copy
+
 import trueskill
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
@@ -144,14 +146,15 @@ class KickerManager:
             i += 1
 
     def kicker_command(self, bot, command):
-        parser = argparse.ArgumentParser(prog=".kicker")
+        parser = argparse.ArgumentParser(prog=".kicker", add_help=False)
         subcommands = parser.add_subparsers()
+        parser.add_argument("-h", action="store_true")
 
         ladder = subcommands.add_parser('ladder')
         ladder.add_argument('type',
                             type=str,
                             choices=['ELO', 'basic', 'scaled', 'trueskill'],
-                            default='ELO',
+                            default='trueskill',
                             nargs='?',
                             )
         ladder.add_argument('options', nargs='*')
@@ -172,7 +175,11 @@ class KickerManager:
         history.set_defaults(func=self._show_history)
 
         args = parser.parse_args(command)
-        args.func(bot, args)
+        if args.h:
+            # bot.say(parser.format_usage())
+            bot.say(parser.format_help())
+        else:
+            args.func(bot, args)
 
 
 class KickerPlayer:
@@ -276,7 +283,7 @@ class BasicScaledLadder(KickerLadder):
         for p in game.team_a:
             p.rank += game.score_a - game.score_b
         for p in game.team_b:
-            p.rank -= game.score_b - game.score_a
+            p.rank += game.score_b - game.score_a
 
     def process(self, players, games):
         for p in players.values():
@@ -288,7 +295,7 @@ class BasicScaledLadder(KickerLadder):
 
         ladder = sorted(
             players.values(),
-            key=lambda x: (x.rank / x.games, x.games),
+            key=lambda x: (float(x.rank) / float(x.games), x.games),
             reverse=True)
 
         ret = []
@@ -298,7 +305,7 @@ class BasicScaledLadder(KickerLadder):
             ret.append((
                 i,
                 player.name,
-                player.rank / player.games,
+                float(player.rank) / float(player.games),
             ))
             i += 1
         return ret
@@ -411,20 +418,31 @@ class TrueSkillLadder(KickerLadder):
             p.sigma = self.sigma
             p.games = 0
 
-        for g in games:
+        for g in games[:-1]:
             self.add_game(g)
+
+        ladder_last = sorted(
+            players.values(),
+            key=lambda x: (x.mu - 3 * x.sigma),
+            reverse=True)
+
+        self.add_game(games[-1])
 
         ladder = sorted(
             players.values(),
             key=lambda x: (x.mu - 3 * x.sigma),
             reverse=True)
+        diff = []
+        for p in ladder:
+            diff.append(ladder_last.index(p))
 
         ret = []
-        ret.append(("rank", "name", "lvl", "mu", "sigma"))
+        ret.append(("rank", "name", "change", "lvl", "mu", "sigma"))
         for i in range(len(ladder)):
             ret.append((
                 i+1,
                 ladder[i].name,
+                diff[i] - i,
                 int(ladder[i].mu - 3 * ladder[i].sigma),
                 ladder[i].mu,
                 ladder[i].sigma
