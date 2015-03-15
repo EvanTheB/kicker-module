@@ -18,9 +18,8 @@ try:
             ladder [(basic)|(ELO [K])]
             history
         """
-        print trigger.nick, trigger.match.string
         text = trigger.group().split()[1:]
-        bot.memory['kicker_manager'].kicker_command(bot, text)
+        bot.say(bot.memory['kicker_manager'].kicker_command(text))
 
 except ImportError as e:
     print "could not import willie"
@@ -37,16 +36,15 @@ LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
 
 def setup(bot):
-    bot.memory['kicker_manager'] = KickerManager(bot)
+    bot.memory['kicker_manager'] = KickerManager()
 
 
 class KickerManager:
 
-    def __init__(self, bot):
+    def __init__(self):
         self.players = {}
         self.games = []
         self.events = []
-        self.bot = bot
         # Load and backup log file
         with open(LOG_FILE, 'r') as log:
             kicker_log = json.load(log)
@@ -63,12 +61,10 @@ class KickerManager:
             else:
                 assert False, "failed to load event: " + str(e)
 
-    def _add_event(self, event, reply_bot=None):
+    def _add_event(self, event):
         self.events.append(event)
         reply = self.events[-1].processEvent(self.players, self.games)
-        print reply
-        if reply_bot is not None:
-            reply_bot.say(reply)
+        return reply
 
     def save_to_log(self):
         to_save = {}
@@ -83,30 +79,31 @@ class KickerManager:
                 indent=4,
                 separators=(',', ': '))
 
-    def _add_player(self, bot, command):
+    def _add_player(self, command):
+        ret = ""
         for name in command.name:
-            self._add_event(AddPlayerEvent(name), reply_bot=bot)
+            ret.append(self._add_event(AddPlayerEvent(name)))
         self.save_to_log()
+        return [ret]
 
-    def _add_game(self, bot, command):
-        print " ".join(command.team_a
-                         + [command.result]
-                         + command.team_b)
-        self._add_event(
+    def _add_game(self, command):
+        ret = self._add_event(
             AddGameEvent(
                 command.team_a
-                         + [command.result]
-                         + command.team_b),
-            reply_bot=bot)
+                + [command.result]
+                + command.team_b),
+        )
         self.save_to_log()
+        return [ret]
 
-    def _pretty_print(self, bot, data_tuples):
+    def _pretty_print(self, data_tuples):
         """
-        This prints the tuples in nice whitespace aligned columns.
-        And is hack.
+        This returns the tuples in nice whitespace aligned columns.
+        And is hack. (list of strangs)
         """
         # widths holds the longest strlen
         # in the list of tuples for that position
+        ret = []
         widths = [0] * len(data_tuples[0])
         for i in range(len(widths)):
             widths[i] = 1 + \
@@ -115,18 +112,18 @@ class KickerManager:
             s = ""
             for j in range(len(data_tuples[i])):
                 s += '{0:>{width}}'.format(data_tuples[i][j], width=widths[j])
-            bot.say(s)
+            ret.append(s)
+        return ret
 
-    def _show_ladder(self, bot, command):
+    def _show_ladder(self, command):
         if command.type == 'ELO':
-            elo_k = 50
+            elo_k = 24
             if command.options:
                 try:
                     elo_k = int(command.options[0])
                 except ValueError:
-                    bot.say("Wanted a number. got {}".format(
-                        command.options[0]))
-                    return
+                    return "Wanted a number. got {}".format(
+                        command.options[0])
             ladder = ELOLadder(K=elo_k)
         elif command.type == 'basic':
             ladder = BasicLadder()
@@ -136,16 +133,31 @@ class KickerManager:
             ladder = TrueSkillLadder()
 
         data_tuples = ladder.process(self.players, self.games)
-        self._pretty_print(bot, data_tuples)
+        return self._pretty_print(data_tuples)
 
-    def _show_history(self, bot, command):
-        bot.say("games:")
+    def _show_history(self, command):
+        ret = []
+        ret.append("games:")
         i = 1
         for g in self.games:
-            bot.say("{}: {}".format(i, g))
+            ret.append("{}: {}".format(i, g))
             i += 1
+        return ret
 
-    def kicker_command(self, bot, command):
+    def write_index_html(self):
+        data_tuples = TrueSkillLadder().process(self.players, self.games)
+        output = '<table border="1"">'
+        for i in data_tuples:
+            output += '<tr>'
+            for j in i:
+                output += '<td>'
+                output += str(j)
+                output += '</td>'
+            output += '</tr>'
+        with open("www/index.html", 'w') as web_page:
+            web_page.write(output)
+
+    def kicker_command(self, command):
         parser = argparse.ArgumentParser(prog=".kicker", add_help=False)
         subcommands = parser.add_subparsers()
         parser.add_argument("-h", action="store_true")
@@ -176,10 +188,10 @@ class KickerManager:
 
         args = parser.parse_args(command)
         if args.h:
-            # bot.say(parser.format_usage())
-            bot.say(parser.format_help())
+
+            return parser.format_help()
         else:
-            args.func(bot, args)
+            return args.func(args)
 
 
 class KickerPlayer:
@@ -384,7 +396,7 @@ class ELOLadder(KickerLadder):
         ret.append(("rank", "name", "ELO", "games"))
         for i in range(len(ladder)):
             ret.append((
-                i+1,
+                i + 1,
                 ladder[i].name,
                 int(ladder[i].rank),
                 ladder[i].games
@@ -423,14 +435,14 @@ class TrueSkillLadder(KickerLadder):
 
         ladder_last = sorted(
             players.values(),
-            key=lambda x: (x.mu - 3 * x.sigma),
+            key=lambda x: (x.mu - 1 * x.sigma),
             reverse=True)
 
         self.add_game(games[-1])
 
         ladder = sorted(
             players.values(),
-            key=lambda x: (x.mu - 3 * x.sigma),
+            key=lambda x: (x.mu - 1 * x.sigma),
             reverse=True)
         diff = []
         for p in ladder:
@@ -440,12 +452,12 @@ class TrueSkillLadder(KickerLadder):
         ret.append(("rank", "name", "change", "lvl", "mu", "sigma"))
         for i in range(len(ladder)):
             ret.append((
-                i+1,
-                ladder[i].name,
-                diff[i] - i,
-                int(ladder[i].mu - 3 * ladder[i].sigma),
-                ladder[i].mu,
-                ladder[i].sigma
+                str(i + 1),
+                str(ladder[i].name),
+                str(diff[i] - i),
+                str(int(ladder[i].mu - 1 * ladder[i].sigma)),
+                "{:.3}".format(ladder[i].mu),
+                "{:.3}".format(ladder[i].sigma),
             ))
         return ret
 
@@ -499,15 +511,11 @@ class AddGameEvent(KickerEvent):
         return AddGameEvent(the_json['command'].split())
 
 if __name__ == '__main__':
-    class Bot:
-
-        def say(self, x):
-            print x
-    bot = Bot()
-    k = KickerManager(bot)
-    # k.kicker_command(bot, ["-h"])
-    # k.kicker_command(bot, ["ladder", "ELO", "60"])
-    k.kicker_command(bot, ["ladder"])
-    # k.kicker_command(bot, ["history"])
-    # k.kicker_command(bot, ["ladder", "-h"])
-    k.kicker_command(bot, ["ladder", "trueskill"])
+    k = KickerManager()
+    # k.kicker_command(["-h"])
+    # k.kicker_command(["ladder", "ELO", "60"])
+    print "\n".join(k.kicker_command( ["ladder"]))
+    # k.kicker_command( ["history"])
+    # k.kicker_command(["ladder", "-h"])
+    print "\n".join(k.kicker_command(["ladder", "ELO"]))
+    k.write_index_html()

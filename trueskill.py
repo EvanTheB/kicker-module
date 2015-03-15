@@ -6,171 +6,218 @@
     https://github.com/moserware/Skills
 
     My python conversion of moser's true skill thing.
+    Only does 2 team games because the maths of the other is what
+    what is a factor graph. Why...
 """
 
-#  <summary>
-# /// Calculate_1v1s the new ratings for only two players.
-# /// </summary>
-# /// <remarks>
-# /// When you only have two players, a lot of the math simplifies. The main purpose of this class
-# /// is to show the bare minimum of what a TrueSkill implementation should have.
-# /// </remarks>
+# <summary>
+# Calculate_1v1s the new ratings for only two players.
+# </summary>
+# <remarks>
+# When you only have two players, a lot of the math simplifies.
+# The main purpose of this class
+# is to show the bare minimum of what a TrueSkill implementation should have.
+# </remarks>
 
+# Kicker, these should go somewhere initty.
 DRAW_PROBABILITY = 0.5
 BETA = 25.0 / 6
 DYNAMICS_FACTOR = 25.0 / 300
+
 import math
 
-def calculate_NvN(team_a, team_b, score_a, score_b):
-    drawMargin = GetDrawMarginFromDrawProbability(DRAW_PROBABILITY, BETA)
 
-    c = math.sqrt(sum([p.sigma**2 for p in team_a]) +
-                  sum([p.sigma**2 for p in team_b]) +
+def calculate_nvn(team_a, team_b, score_a, score_b):
+    """
+    Calculates new trueskills for a two team game.
+    Scores are translated to win/loss/draw.
+    Teams are lists of players with 'mu' and 'sigma'
+    """
+    draw_margin = get_draw_margin_from_draw_probability(DRAW_PROBABILITY, BETA)
+
+    c = math.sqrt(sum([p.sigma ** 2 for p in team_a]) +
+                  sum([p.sigma ** 2 for p in team_b]) +
                   len(team_a + team_b) * BETA ** 2)
     mean_a = sum([p.mu for p in team_a])
     mean_b = sum([p.mu for p in team_b])
-    meanDelta = mean_a - mean_b
+    mean_delta = mean_a - mean_b
 
     def update_team_ratings(team, mean_delta, was_draw, winner):
-        rankMultiplier = 1.0 if winner else -1.0
+        """
+        helper for doing the maths per team.
+        """
+        rank_multiplier = 1.0 if winner else -1.0
         if not was_draw:
-            v = VExceedsMargin(mean_delta, drawMargin, c)
-            w = WExceedsMargin(mean_delta, drawMargin, c)
+            v = v_exceeds_margin(mean_delta, draw_margin, c)
+            w = w_exceeds_margin(mean_delta, draw_margin, c)
 
         else:
-            v = VWithinMargin(mean_delta, drawMargin, c)
-            w = WWithinMargin(mean_delta, drawMargin, c)
-            rankMultiplier = 1.0
+            v = v_within_margin(mean_delta, draw_margin, c)
+            w = w_within_margin(mean_delta, draw_margin, c)
+            rank_multiplier = 1.0
 
-        for p in team:
-            meanMultiplier = (p.sigma ** 2 + DYNAMICS_FACTOR ** 2) / c
-            varianceWithDynamics = p.sigma ** 2 + DYNAMICS_FACTOR ** 2
-            stdDevMultiplier = varianceWithDynamics / (c ** 2)
+        for player in team:
+            mean_multiplier = (player.sigma ** 2 + DYNAMICS_FACTOR ** 2) / c
+            variance_with_dynamics = player.sigma ** 2 + DYNAMICS_FACTOR ** 2
+            std_dev_multiplier = variance_with_dynamics / (c ** 2)
 
-            newMean = p.mu + (rankMultiplier * meanMultiplier * v)
-            newStdDev = math.sqrt(
-                varianceWithDynamics * (1 - w * stdDevMultiplier))
+            new_mean = player.mu + (rank_multiplier * mean_multiplier * v)
+            new_std_dev = math.sqrt(
+                variance_with_dynamics * (1 - w * std_dev_multiplier))
 
-            p.mu = newMean
-            p.sigma = newStdDev
+            player.mu = new_mean
+            player.sigma = new_std_dev
 
-    update_team_ratings(team_a,  meanDelta, score_a == score_b, score_a > score_b)
-    update_team_ratings(team_b, -meanDelta, score_a == score_b, score_b > score_a)
+    update_team_ratings(
+        team_a, mean_delta, score_a == score_b, score_a > score_b)
+    update_team_ratings(
+        team_b, -mean_delta, score_a == score_b, score_b > score_a)
+
 
 def calculate_1v1(team_a, team_b, score_a, score_b):
-    drawMargin = GetDrawMarginFromDrawProbability(DRAW_PROBABILITY, BETA)
+    """
+    Calculates new trueskills for a two player game.
+    Scores are translated to win/loss/draw.
+    players have 'mu' and 'sigma'
+    """
+    draw_margin = get_draw_margin_from_draw_probability(DRAW_PROBABILITY, BETA)
     c = math.sqrt(team_a.sigma ** 2 +
                   team_b.sigma ** 2 +
                   2 * BETA ** 2)
 
-    meanDelta = team_a.mu - team_b.mu
+    mean_delta = team_a.mu - team_b.mu
 
     def update_rating(team, mean_delta, was_draw, winner):
-        rankMultiplier = 1.0 if winner else -1.0
+        """
+        helper for doing the maths per team.
+        """
+        rank_multiplier = 1.0 if winner else -1.0
         if not was_draw:
-            v = VExceedsMargin(mean_delta, drawMargin, c)
-            w = WExceedsMargin(mean_delta, drawMargin, c)
+            v = v_exceeds_margin(mean_delta, draw_margin, c)
+            w = w_exceeds_margin(mean_delta, draw_margin, c)
 
         else:
-            v = VWithinMargin(mean_delta, drawMargin, c)
-            w = WWithinMargin(mean_delta, drawMargin, c)
-            rankMultiplier = 1.0
+            v = v_within_margin(mean_delta, draw_margin, c)
+            w = w_within_margin(mean_delta, draw_margin, c)
+            rank_multiplier = 1.0
 
-        meanMultiplier = (team.sigma ** 2 + DYNAMICS_FACTOR ** 2) / c
-        varianceWithDynamics = team.sigma ** 2 + DYNAMICS_FACTOR ** 2
-        stdDevMultiplier = varianceWithDynamics / (c ** 2)
-        newMean = team.mu + (rankMultiplier * meanMultiplier * v)
-        newStdDev = math.sqrt(
-            varianceWithDynamics * (1 - w * stdDevMultiplier))
-        team.mu = newMean
-        team.sigma = newStdDev
+        mean_multiplier = (team.sigma ** 2 + DYNAMICS_FACTOR ** 2) / c
+        variance_with_dynamics = team.sigma ** 2 + DYNAMICS_FACTOR ** 2
+        std_dev_multiplier = variance_with_dynamics / (c ** 2)
+        new_mean = team.mu + (rank_multiplier * mean_multiplier * v)
+        new_std_dev = math.sqrt(
+            variance_with_dynamics * (1 - w * std_dev_multiplier))
+        team.mu = new_mean
+        team.sigma = new_std_dev
 
-    update_rating(team_a,  meanDelta, score_a == score_b, score_a > score_b)
-    update_rating(team_b, -meanDelta, score_a == score_b, score_b > score_a)
-
-
-def VExceedsMargin(teamPerformanceDifference, drawMargin, c=1.0):
-    teamPerformanceDifference /= c
-    drawMargin /= c
-    denominator = GaussianCumulativeTo(teamPerformanceDifference - drawMargin)
-    if (denominator < 2.222758749e-162):
-        return -teamPerformanceDifference + drawMargin
-    return GaussianAt(teamPerformanceDifference - drawMargin) / denominator
+    update_rating(team_a, mean_delta, score_a == score_b, score_a > score_b)
+    update_rating(team_b, -mean_delta, score_a == score_b, score_b > score_a)
 
 
-def WExceedsMargin(teamPerformanceDifference, drawMargin, c=1.0):
-    teamPerformanceDifference /= c
-    drawMargin /= c
+def v_exceeds_margin(team_performance_difference, draw_margin, c=1.0):
+    """
+    The V function for a win
+    """
+    team_performance_difference /= c
+    draw_margin /= c
+    denominator = gaussian_cumulative_to(
+        team_performance_difference - draw_margin)
+    if denominator < 2.222758749e-162:
+        return -team_performance_difference + draw_margin
+    return gaussian_at(team_performance_difference - draw_margin) / denominator
 
-    denominator = GaussianCumulativeTo(teamPerformanceDifference - drawMargin)
-    if (denominator < 2.222758749e-162):
-        if (teamPerformanceDifference < 0.0):
+
+def w_exceeds_margin(team_performance_difference, draw_margin, c=1.0):
+    """
+    The W function for a win
+    """
+    team_performance_difference /= c
+    draw_margin /= c
+
+    denominator = gaussian_cumulative_to(
+        team_performance_difference - draw_margin)
+    if denominator < 2.222758749e-162:
+        if team_performance_difference < 0.0:
             return 1.0
         return 0.0
-    vWin = VExceedsMargin(teamPerformanceDifference, drawMargin)
-    return vWin * (vWin + teamPerformanceDifference - drawMargin)
+    vWin = v_exceeds_margin(team_performance_difference, draw_margin)
+    return vWin * (vWin + team_performance_difference - draw_margin)
 
 
-def VWithinMargin(teamPerformanceDifference, drawMargin, c=1.0):
-    teamPerformanceDifference /= c
-    drawMargin /= c
+def v_within_margin(team_performance_difference, draw_margin, c=1.0):
+    """
+    The V function for a draw
+    """
+    team_performance_difference /= c
+    draw_margin /= c
 
-    teamPerformanceDifferenceAbsoluteValue = abs(teamPerformanceDifference)
-    denominator = GaussianCumulativeTo(drawMargin - teamPerformanceDifferenceAbsoluteValue) - \
-        GaussianCumulativeTo(-drawMargin -
-                             teamPerformanceDifferenceAbsoluteValue)
-    if (denominator < 2.222758749e-162):
+    abs_tpd = abs(team_performance_difference)
+    denominator = gaussian_cumulative_to(draw_margin - abs_tpd) - \
+        gaussian_cumulative_to(-draw_margin -
+                               abs_tpd)
+    if denominator < 2.222758749e-162:
 
-        if (teamPerformanceDifference < 0.0):
+        if team_performance_difference < 0.0:
 
-            return -teamPerformanceDifference - drawMargin
+            return -team_performance_difference - draw_margin
 
-        return -teamPerformanceDifference + drawMargin
+        return -team_performance_difference + draw_margin
 
-    numerator = GaussianAt(-drawMargin - teamPerformanceDifferenceAbsoluteValue) - \
-        GaussianAt(drawMargin - teamPerformanceDifferenceAbsoluteValue)
-    if (teamPerformanceDifference < 0.0):
+    numerator = gaussian_at(-draw_margin - abs_tpd) - \
+        gaussian_at(draw_margin - abs_tpd)
+    if team_performance_difference < 0.0:
 
         return -numerator / denominator
 
     return numerator / denominator
 
 
-def WWithinMargin(teamPerformanceDifference, drawMargin, c=1.0):
-    teamPerformanceDifference /= c
-    drawMargin /= c
+def w_within_margin(team_performance_difference, draw_margin, c=1.0):
+    """
+    The W function for a draw
+    """
+    team_performance_difference /= c
+    draw_margin /= c
 
-    teamPerformanceDifferenceAbsoluteValue = abs(teamPerformanceDifference)
-    denominator = GaussianCumulativeTo(drawMargin - teamPerformanceDifferenceAbsoluteValue) - \
-        GaussianCumulativeTo(-drawMargin -
-                             teamPerformanceDifferenceAbsoluteValue)
-    if (denominator < 2.222758749e-162):
+    abs_tpd = abs(team_performance_difference)
+    denominator = gaussian_cumulative_to(draw_margin - abs_tpd) - \
+        gaussian_cumulative_to(-draw_margin -
+                               abs_tpd)
+    if denominator < 2.222758749e-162:
 
         return 1.0
 
-    vt = VWithinMargin(teamPerformanceDifferenceAbsoluteValue, drawMargin)
-    return vt * vt + ((drawMargin - teamPerformanceDifferenceAbsoluteValue) * GaussianAt(drawMargin - teamPerformanceDifferenceAbsoluteValue) - (-drawMargin - teamPerformanceDifferenceAbsoluteValue) * GaussianAt(-drawMargin - teamPerformanceDifferenceAbsoluteValue)) / denominator
+    vt = v_within_margin(abs_tpd, draw_margin)
+    return vt * vt + ((draw_margin - abs_tpd) * gaussian_at(draw_margin - abs_tpd) - (-draw_margin - abs_tpd) * gaussian_at(-draw_margin - abs_tpd)) / denominator
 
 
-def GaussianAt(x, mean=0.0, standardDeviation=1.0):
-
+def gaussian_at(x, mean=0.0, standard_dev=1.0):
+    """
+    gaussian function at x
+    """
     # // See http://mathworld.wolfram.com/NormalDistribution.html
     # // 1 -(x-mean)^2 / (2*stdDev^2)
     # // P(x) = ------------------- * e
     # // stdDev * sqrt(2*pi)
-    multiplier = 1.0 / (standardDeviation * (2 * math.pi) ** 0.5)
-    expPart = math.exp(
-        (-1.0 * math.pow(x - mean, 2.0)) / (2 * (standardDeviation ** 2)))
-    result = multiplier * expPart
+    multiplier = 1.0 / (standard_dev * (2 * math.pi) ** 0.5)
+    exp_part = math.exp(
+        (-1.0 * math.pow(x - mean, 2.0)) / (2 * (standard_dev ** 2)))
+    result = multiplier * exp_part
     return result
 
 
-def GaussianCumulativeTo(x, mean=0.0, standardDeviation=1.0):
-
+def gaussian_cumulative_to(x, mean=0.0, standard_dev=1.0):
+    """
+    cumulative (error function) to x.
+    did not implement non standard distributions woops
+    """
     return 0.5 + 0.5 * math.erf(x / math.sqrt(2))
 
 
-def ErrorFunctionCumulativeTo(x):
+def error_function_cumulative_to(x):
+    """
+    What the heck is this
+    """
     # // Derived from page 265 of Numerical Recipes 3rd Edition
     z = abs(x)
     t = 2.0 / (2.0 + z)
@@ -197,7 +244,10 @@ def ErrorFunctionCumulativeTo(x):
     return ans if x >= 0.0 else 2.0 - ans
 
 
-def GetDrawMarginFromDrawProbability(drawProbability, beta):
+def get_draw_margin_from_draw_probability(draw_probability, beta):
+    """
+    From the % chance of draw get the magic number
+    """
 
     # // Derived from TrueSkill technical report (MSR-TR-2006-80), page 6
     # // draw probability = 2 * CDF(margin/(sqrt(n1+n2)*beta)) -1
@@ -205,24 +255,26 @@ def GetDrawMarginFromDrawProbability(drawProbability, beta):
     # //
     # // margin = inversecdf((draw probability + 1)/2) * sqrt(n1+n2) * beta
     # // n1 and n2 are the number of players on each team
-    margin = GaussianInverseCumulativeTo(
-        .5 * (drawProbability + 1), 0, 1) * math.sqrt(1 + 1) * beta
+    margin = gaussian_inverse_cumulative_to(
+        .5 * (draw_probability + 1), 0, 1) * math.sqrt(1 + 1) * beta
     return margin
 
 
-def GaussianInverseCumulativeTo(x, mean=0.0, standardDeviation=1.0):
-
+def gaussian_inverse_cumulative_to(x, mean=0.0, standard_dev=1.0):
+    """
+    This is weird
+    """
     # // From numerical recipes, page 320
-    return mean - math.sqrt(2) * standardDeviation * InverseErrorFunctionCumulativeTo(2 * x)
+    return mean - math.sqrt(2) * standard_dev * inverse_error_function_cumulative_to(2 * x)
 
 
-def InverseErrorFunctionCumulativeTo(p):
+def inverse_error_function_cumulative_to(p):
     # // From page 265 of numerical recipes
-    if (p >= 2.0):
+    if p >= 2.0:
 
         return -100
 
-    if (p <= 0.0):
+    if p <= 0.0:
 
         return 100
 
@@ -233,11 +285,12 @@ def InverseErrorFunctionCumulativeTo(p):
         ((2.30753 + t * 0.27061) / (1.0 + t * (0.99229 + t * 0.04481)) - t)
     for j in range(2):
 
-        err = ErrorFunctionCumulativeTo(x) - pp
+        err = error_function_cumulative_to(x) - pp
         # // Halley
         x += err / (1.12837916709551257 * math.exp(-(x * x)) - x * err)
 
     return x if p < 1.0 else -x
+
 
 def tester(a, b, a_s, b_s, message):
     calculate_1v1(a, b, a_s, b_s)
@@ -245,6 +298,7 @@ def tester(a, b, a_s, b_s, message):
     print a
     print b
     print
+
 
 def tester_team(a, b, a_s, b_s, message):
     calculate_NvN(a, b, a_s, b_s)
@@ -254,18 +308,21 @@ def tester_team(a, b, a_s, b_s, message):
     print
 
 if __name__ == "__main__":
-    class player():
-        def __init__(self, mu=25.0, sigma=25.0/3):
+    class Player():
+
+        def __init__(self, mu=25.0, sigma=25.0 / 3):
             self.mu = float(mu)
             self.sigma = float(sigma)
+
         def __str__(self):
             return "{0.mu} {0.sigma}".format(self)
 
         def __repr__(self):
             return self.__str__()
 
-    a = player()
-    b = player()
+    a = Player()
+    b = Player()
+
 
 # Draw
     tester(a, b, 1, 1, "draw")
@@ -275,15 +332,15 @@ if __name__ == "__main__":
     tester(a, b, 0, 2, "loss")
 
 # High skill
-    tester(player(mu=35), player(mu=15), 1, 1, "high skill draw")
-    tester(player(mu=35), player(mu=15), 2, 0, "high skill win")
+    tester(Player(mu=35), Player(mu=15), 1, 1, "high skill draw")
+    tester(Player(mu=35), Player(mu=15), 2, 0, "high skill win")
 # High confidence
-    tester(player(sigma=1), player(sigma=1), 1, 1, "high confidence draw")
-    tester(player(sigma=1), player(sigma=1), 2, 0, "high confidence win")
+    tester(Player(sigma=1), Player(sigma=1), 1, 1, "high confidence draw")
+    tester(Player(sigma=1), Player(sigma=1), 2, 0, "high confidence win")
 
 # Test team
-    a = [player()] * 2 + [player(mu=35)]
-    b = [player()] * 2 + [player(mu=35)]
+    a = [Player()] * 2 + [Player(mu=35)]
+    b = [Player()] * 2 + [Player(mu=35)]
     tester_team(a, b, 1, 1, "team draw")
     tester_team(a, b, 2, 0, "team win")
     tester_team(a, b, 0, 2, "team loss")
