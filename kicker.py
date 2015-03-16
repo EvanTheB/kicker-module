@@ -146,14 +146,30 @@ class KickerManager:
 
     def write_index_html(self):
         data_tuples = TrueSkillLadder().process(self.players, self.games)
-        output = '<table border="1"">'
-        for i in data_tuples:
+        output = '<table border="1">'
+        for line in data_tuples:
             output += '<tr>'
-            for j in i:
+            for col in line:
                 output += '<td>'
-                output += str(j)
+                output += str(col)
                 output += '</td>'
             output += '</tr>'
+        output += '\n'
+        i = 1
+        for g in self.games:
+            output += "{}: {}<br>".format(i, g)
+            i += 1
+        output = \
+"""<!DOCTYPE html>
+<html>
+<head>
+  <title>Page Title</title>
+</head>
+
+<body>{body}
+</body>
+
+</html>""".format(body=output)
         with open("www/index.html", 'w') as web_page:
             web_page.write(output)
 
@@ -421,7 +437,7 @@ class TrueSkillLadder(KickerLadder):
     def add_game(self, game):
         for p in game.team_a + game.team_b:
             p.games += 1
-        trueskill.calculate_NvN(
+        trueskill.calculate_nvn(
             game.team_a, game.team_b, game.score_a, game.score_b)
 
     def process(self, players, games):
