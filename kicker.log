@@ -119,6 +119,38 @@
         {
             "command": "nick rowan beat william chris",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "nick mark draw andy evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william andy draw mark nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "keith andy draw evan nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy evan draw chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick keith beat andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris beat evan tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy celine beat evan nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william mark beat keith tim",
+            "type": "AddGameEvent"
         }
     ]
 }
