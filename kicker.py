@@ -19,7 +19,9 @@ try:
             history
         """
         text = trigger.group().split()[1:]
-        bot.say(bot.memory['kicker_manager'].kicker_command(text))
+        ret = bot.memory['kicker_manager'].kicker_command(text)
+        for l in ret:
+            bot.say(l)
 
 except ImportError as e:
     print "could not import willie"
@@ -50,6 +52,7 @@ class KickerManager:
             kicker_log = json.load(log)
         shutil.copyfile(LOG_FILE, LOG_FILE + '_backup')
         self._load_from_log(kicker_log)
+        self.write_index_html()
 
     def _load_from_log(self, log):
         events = log['events']
@@ -80,11 +83,12 @@ class KickerManager:
                 separators=(',', ': '))
 
     def _add_player(self, command):
-        ret = ""
+        ret = []
         for name in command.name:
             ret.append(self._add_event(AddPlayerEvent(name)))
         self.save_to_log()
-        return [ret]
+        self.write_index_html()
+        return ret
 
     def _add_game(self, command):
         ret = self._add_event(
@@ -94,6 +98,7 @@ class KickerManager:
                 + command.team_b),
         )
         self.save_to_log()
+        self.write_index_html()
         return [ret]
 
     def _pretty_print(self, data_tuples):
