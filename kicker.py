@@ -25,17 +25,21 @@ try:
 
 except ImportError as e:
     print "could not import willie"
+except AttributeError:
+    print "could not import willie"
 
 import json
 import os
 import shutil
 import argparse
-import copy
+# import copy
+import subprocess
+import numpy as np
 
 import trueskill
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
-
+print dir(trueskill)
 
 def setup(bot):
     bot.memory['kicker_manager'] = KickerManager()
@@ -138,7 +142,16 @@ class KickerManager:
             ladder = TrueSkillLadder()
 
         data_tuples = ladder.process(self.players, self.games)
-        return self._pretty_print(data_tuples)
+        caca = subprocess.Popen(['toilet',
+                                 data_tuples[1][1],
+                                 '--export',
+                                 'irc',
+                                 '--gay'],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                )
+        (caca_out, _) = caca.communicate()
+        return caca_out.split('\n') + self._pretty_print(data_tuples)
 
     def _show_history(self, command):
         ret = []
@@ -149,8 +162,48 @@ class KickerManager:
             i += 1
         return ret
 
+    def team_matrix(self):
+        player_list = self.players.keys()
+        mat = np.zeros([len(self.players), len(self.players)])
+
+        for g in self.games:
+            i = player_list.index(g.team_a[0].name)
+            j = player_list.index(g.team_a[1].name)
+            mat[i][j] += 1
+            mat[j][i] += 1
+            i = player_list.index(g.team_b[0].name)
+            j = player_list.index(g.team_b[1].name)
+            mat[j][i] += 1
+            mat[i][j] += 1
+        top_names = ['***']
+        mat = mat.tolist()
+        for i in range(len(player_list)):
+            top_names.append(player_list[i])
+            mat[i] = [player_list[i]] + mat[i]
+        return [top_names] + mat
+
+    def next_match(self):
+        player_list = self.players.values()
+        matchs = []
+        for i in range(0, len(player_list)):
+            for j in range(i + 1, len(player_list)):
+                for x in range(j + 1, len(player_list)):
+                    for y in range(x + 1, len(player_list)):
+                        matchs.append((
+                            player_list[i].name,
+                            player_list[j].name,
+                            player_list[x].name,
+                            player_list[y].name,
+                            trueskill.calculate_match_quality(
+                                [player_list[i], player_list[j]],
+                                [player_list[x], player_list[y]],
+                            )
+                        ))
+        return sorted(matchs, key=lambda x: x[4], reverse=True)
+
     def write_index_html(self):
         data_tuples = TrueSkillLadder().process(self.players, self.games)
+        # ladder table
         output = '<table border="1">'
         for line in data_tuples:
             output += '<tr>'
@@ -159,11 +212,23 @@ class KickerManager:
                 output += str(col)
                 output += '</td>'
             output += '</tr>'
-        output += '\n'
+        output += '</table>\n'
+
+        # next best games
+        output += '<p>'
+        best_matches = self.next_match()
+        for m in best_matches[0:10]:
+            output += "{} {} vs {} {} : {}<br>\n".format(*m)
+        output += '\n</p>'
+
+        # game list
+        output += '<p>'
         i = 1
         for g in self.games:
-            output += "{}: {}<br>".format(i, g)
+            output += "{}: {}<br>\n".format(i, g)
             i += 1
+        output += '\n</p>'
+
         output = \
 """<!DOCTYPE html>
 <html>
@@ -171,7 +236,8 @@ class KickerManager:
   <title>Page Title</title>
 </head>
 
-<body>{body}
+<body>
+{body}
 </body>
 
 </html>""".format(body=output)
@@ -222,6 +288,9 @@ class KickerPlayer:
 
     def __str__(self):
         return 'Player: {}'.format(self.name)
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class KickerGame:
@@ -276,7 +345,7 @@ class BasicLadder(KickerLadder):
         for p in game.team_a:
             p.rank += game.score_a - game.score_b
         for p in game.team_b:
-            p.rank -= game.score_b - game.score_a
+            p.rank += game.score_b - game.score_a
 
     def process(self, players, games):
         for p in players.values():
@@ -328,7 +397,7 @@ class BasicScaledLadder(KickerLadder):
 
         ladder = sorted(
             players.values(),
-            key=lambda x: (float(x.rank) / float(x.games), x.games),
+            key=lambda x: (float(x.rank) / (float(x.games) + 1e-30), x.games),
             reverse=True)
 
         ret = []
@@ -338,7 +407,7 @@ class BasicScaledLadder(KickerLadder):
             ret.append((
                 i,
                 player.name,
-                float(player.rank) / float(player.games),
+                float(player.rank) / (float(player.games) + 1e-30),
             ))
             i += 1
         return ret
@@ -535,8 +604,10 @@ if __name__ == '__main__':
     k = KickerManager()
     # k.kicker_command(["-h"])
     # k.kicker_command(["ladder", "ELO", "60"])
-    print "\n".join(k.kicker_command( ["ladder"]))
+    # print "\n".join(k.kicker_command(["ladder"]))
     # k.kicker_command( ["history"])
     # k.kicker_command(["ladder", "-h"])
-    print "\n".join(k.kicker_command(["ladder", "ELO"]))
-    k.write_index_html()
+    # print "\n".join(k.kicker_command(["ladder", "ELO"]))
+    # k.write_index_html()
+    print k.team_matrix()
+    print k.next_match()

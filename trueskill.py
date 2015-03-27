@@ -27,6 +27,28 @@ DYNAMICS_FACTOR = 25.0 / 300
 import math
 
 
+def calculate_match_quality(team_a, team_b):
+    # We just use equation 4.1 found on page 8 of the TrueSkill 2006 paper:
+    beta_squared = BETA ** 2
+
+    # This is the square root part of the equation:
+    sqrtPart = math.sqrt((4 * beta_squared) /
+                         (4 * beta_squared +
+                          sum([p.sigma ** 2 for p in team_a]) +
+                          sum([p.sigma ** 2 for p in team_b])))
+    # This is the exponent part of the equation:
+    expPart = math.exp((-
+                        1 *
+                        (sum([p.mu for p in team_a]) -
+                         sum([p.mu for p in team_b])) ** 2) /
+                       (2 *
+                        (4 *
+                         beta_squared +
+                         sum([p.sigma ** 2 for p in team_a]) +
+                            sum([p.sigma ** 2 for p in team_b]))))
+    return sqrtPart * expPart
+
+
 def calculate_nvn(team_a, team_b, score_a, score_b):
     """
     Calculates new trueskills for a two team game.
@@ -188,7 +210,8 @@ def w_within_margin(team_performance_difference, draw_margin, c=1.0):
         return 1.0
 
     vt = v_within_margin(abs_tpd, draw_margin)
-    return vt * vt + ((draw_margin - abs_tpd) * gaussian_at(draw_margin - abs_tpd) - (-draw_margin - abs_tpd) * gaussian_at(-draw_margin - abs_tpd)) / denominator
+    return vt * vt + ((draw_margin - abs_tpd) * gaussian_at(draw_margin - abs_tpd) -
+                      (-draw_margin - abs_tpd) * gaussian_at(-draw_margin - abs_tpd)) / denominator
 
 
 def gaussian_at(x, mean=0.0, standard_dev=1.0):
@@ -265,7 +288,8 @@ def gaussian_inverse_cumulative_to(x, mean=0.0, standard_dev=1.0):
     This is weird
     """
     # // From numerical recipes, page 320
-    return mean - math.sqrt(2) * standard_dev * inverse_error_function_cumulative_to(2 * x)
+    return mean - math.sqrt(2) * standard_dev * \
+        inverse_error_function_cumulative_to(2 * x)
 
 
 def inverse_error_function_cumulative_to(p):

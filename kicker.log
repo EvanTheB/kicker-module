@@ -151,6 +151,46 @@
         {
             "command": "william mark beat keith tim",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "tim nick beat william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "mark william draw tim nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan andy beat chris nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "adam",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan adam draw tim chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy adam beat tim chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy chris beat nick tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan william beat chris nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "paul",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "nick adam beat evan keith",
+            "type": "AddGameEvent"
         }
     ]
 }
