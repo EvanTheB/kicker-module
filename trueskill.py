@@ -27,6 +27,18 @@ DYNAMICS_FACTOR = 25.0 / 300
 import math
 
 
+def match_quality(team_a, team_b):
+    mean_a = sum([p.mu for p in team_a])
+    mean_b = sum([p.mu for p in team_b])
+    mean_delta = mean_a - mean_b
+    denom = (2 * BETA ** 2 + sum(
+        [p.sigma ** 2 for p in team_a + team_b]))
+
+    sqrt_part = (2 * BETA ** 2) / denom
+    exp_part = -0.5 * (mean_delta) ** 2 / denom
+    return math.sqrt(sqrt_part) * math.exp(exp_part)
+
+
 def chances(team_a, team_b):
 
     draw_margin = get_draw_margin_from_draw_probability(
@@ -47,7 +59,7 @@ def chances(team_a, team_b):
     p_draw = (gaussian_cumulative_to(abs(draw_margin) - abs(mean_delta))
               - gaussian_cumulative_to(-abs(draw_margin) - abs(mean_delta)))
 
-    print p_win, p_draw, p_loss, p_win+ p_draw+ p_loss
+    return p_win, p_draw, p_loss
 
 
 def calculate_nvn(team_a, team_b, score_a, score_b):
@@ -56,7 +68,8 @@ def calculate_nvn(team_a, team_b, score_a, score_b):
     Scores are translated to win/loss/draw.
     Teams are lists of players with 'mu' and 'sigma'
     """
-    draw_margin = get_draw_margin_from_draw_probability(DRAW_PROBABILITY, BETA, len(team_a) + len(team_b))
+    draw_margin = get_draw_margin_from_draw_probability(
+        DRAW_PROBABILITY, BETA, len(team_a) + len(team_b))
 
     c = math.sqrt(sum([p.sigma ** 2 for p in team_a]) +
                   sum([p.sigma ** 2 for p in team_b]) +
@@ -65,12 +78,12 @@ def calculate_nvn(team_a, team_b, score_a, score_b):
     mean_b = sum([p.mu for p in team_b])
     mean_delta = mean_a - mean_b
 
-    def update_team_ratings(team, mean_delta, was_draw, winner):
+    def update_team_ratings(team, mean_delta, is_draw, is_winner):
         """
         helper for doing the maths per team.
         """
-        rank_multiplier = 1.0 if winner else -1.0
-        if not was_draw:
+        rank_multiplier = 1.0 if is_winner else -1.0
+        if not is_draw:
             v = v_exceeds_margin(mean_delta, draw_margin, c)
             w = w_exceeds_margin(mean_delta, draw_margin, c)
 
@@ -94,7 +107,7 @@ def calculate_nvn(team_a, team_b, score_a, score_b):
     update_team_ratings(
         team_a, mean_delta, score_a == score_b, score_a > score_b)
     update_team_ratings(
-        team_b, -mean_delta, score_a == score_b, score_b > score_a)
+        team_b, mean_delta, score_a == score_b, score_b > score_a)
 
 
 def calculate_1v1(team_a, team_b, score_a, score_b):
@@ -103,7 +116,8 @@ def calculate_1v1(team_a, team_b, score_a, score_b):
     Scores are translated to win/loss/draw.
     players have 'mu' and 'sigma'
     """
-    draw_margin = get_draw_margin_from_draw_probability(DRAW_PROBABILITY, BETA, 2)
+    draw_margin = get_draw_margin_from_draw_probability(
+        DRAW_PROBABILITY, BETA, 2)
     c = math.sqrt(team_a.sigma ** 2 +
                   team_b.sigma ** 2 +
                   2 * BETA ** 2)
@@ -134,7 +148,7 @@ def calculate_1v1(team_a, team_b, score_a, score_b):
         team.sigma = new_std_dev
 
     update_rating(team_a, mean_delta, score_a == score_b, score_a > score_b)
-    update_rating(team_b, -mean_delta, score_a == score_b, score_b > score_a)
+    update_rating(team_b, mean_delta, score_a == score_b, score_b > score_a)
 
 
 def v_exceeds_margin(team_performance_difference, draw_margin, c=1.0):
@@ -175,9 +189,8 @@ def v_within_margin(team_performance_difference, draw_margin, c=1.0):
     draw_margin /= c
 
     abs_tpd = abs(team_performance_difference)
-    denominator = gaussian_cumulative_to(draw_margin - abs_tpd) - \
-        gaussian_cumulative_to(-draw_margin -
-                               abs_tpd)
+    denominator = (gaussian_cumulative_to(draw_margin - abs_tpd) -
+                   gaussian_cumulative_to(-draw_margin - abs_tpd))
     if denominator < 2.222758749e-162:
 
         if team_performance_difference < 0.0:
@@ -186,8 +199,8 @@ def v_within_margin(team_performance_difference, draw_margin, c=1.0):
 
         return -team_performance_difference + draw_margin
 
-    numerator = gaussian_at(-draw_margin - abs_tpd) - \
-        gaussian_at(draw_margin - abs_tpd)
+    numerator = (gaussian_at(-draw_margin - abs_tpd) -
+                 gaussian_at(draw_margin - abs_tpd))
     if team_performance_difference < 0.0:
 
         return -numerator / denominator
@@ -203,9 +216,8 @@ def w_within_margin(team_performance_difference, draw_margin, c=1.0):
     draw_margin /= c
 
     abs_tpd = abs(team_performance_difference)
-    denominator = gaussian_cumulative_to(draw_margin - abs_tpd) - \
-        gaussian_cumulative_to(-draw_margin -
-                               abs_tpd)
+    denominator = (gaussian_cumulative_to(draw_margin - abs_tpd) -
+                   gaussian_cumulative_to(-draw_margin - abs_tpd))
     if denominator < 2.222758749e-162:
 
         return 1.0
@@ -241,7 +253,7 @@ def gaussian_cumulative_to(x, mean=0.0, standard_dev=1.0):
 #     """
 #     What the heck is this
 #     """
-#     # // Derived from page 265 of Numerical Recipes 3rd Edition
+# // Derived from page 265 of Numerical Recipes 3rd Edition
 #     z = abs(x)
 #     t = 2.0 / (2.0 + z)
 #     ty = 4 * t - 2
@@ -309,7 +321,7 @@ def get_draw_margin_from_draw_probability(draw_probability, beta, n_players):
 #     pp = p if p < 1.0 else 2 - p
 # // Initial guess
 #     t = math.sqrt(-2 * math.log(pp / 2.0))
-#     x = -0.70711 * \
+#     x = -0.70711 *
 #         ((2.30753 + t * 0.27061) / (1.0 + t * (0.99229 + t * 0.04481)) - t)
 #     for j in range(2):
 
