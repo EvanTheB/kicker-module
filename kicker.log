@@ -191,6 +191,38 @@
         {
             "command": "nick adam beat evan keith",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "william nick beat evan celine",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "tet",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "tim tet beat chris mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick draw andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan tim lost william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat mark andy",
+            "type": "AddGameEvent"
         }
     ]
 }
