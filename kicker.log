@@ -223,6 +223,34 @@
         {
             "command": "evan nick beat mark andy",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "andy chris beat william tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick rowan beat william keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "chrismc",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan chris draw mark tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan nick beat evan andy",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris draw andy adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris beat tim evan",
+            "type": "AddGameEvent"
         }
     ]
 }
