@@ -71,6 +71,7 @@ class KickerManager(object):
         history.set_defaults(func=self._show_history)
 
         next_best = subcommands.add_parser('next')
+        next_best.add_argument('players', type=str, nargs='*')
         next_best.set_defaults(func=self._best_matches)
 
         whowins = subcommands.add_parser('whowins')
@@ -104,6 +105,9 @@ class KickerManager(object):
                 seen_games.add(team_a + team_b)
                 all_games.append(
                     (team_a + team_b, trueskill.match_quality_hard(team_a, team_b)))
+        if command.players:
+            for name in command.players:
+                all_games = [g for g in all_games if name in [p.name for p in g[0]]]
 
         teams = sorted(all_games, key=lambda x: x[1], reverse=True)
         return [" ".join([p.name for p in t[0]]) + " %f" % t[1]  for t in teams[0:4]]
@@ -207,4 +211,5 @@ if __name__ == '__main__':
     # k.kicker_command(["ladder", "-h"])
     k.write_index_html()
     print "\n".join(k.kicker_command(["next"]))
+    print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
     print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
