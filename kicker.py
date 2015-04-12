@@ -3,180 +3,43 @@
 ebenn, modified from rss.py
 """
 from __future__ import unicode_literals
-try:
-    from willie.module import commands, interval
-    from willie.config import ConfigurationError
-    from willie.logger import get_logger
 
-    @commands('kicker')
-    def kicker_command(bot, trigger):
-        """
-        Manage the kicker.
-        Commands:
-            add <player>
-            game <player> <player> (beat)|(lost)|(draw) <player> <player>
-            ladder [(basic)|(ELO [K])]
-            history
-        """
-        text = trigger.group().split()[1:]
-        ret = bot.memory['kicker_manager'].kicker_command(text)
-        for l in ret:
-            bot.say(l)
-
-except ImportError as e:
-    print "could not import willie"
-
-import json
-import os
-import shutil
 import argparse
-import copy
+import itertools
 
+import kicker_ladders
+import kicker_backend
 import trueskill
 
-LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
+
+def pretty_print_2d(data_2d):
+    """
+    This takes a list of list of stringables.
+    Returns a list of strings, with whitespace to align columns.
+    eg: [[a,b],[cc,ddd]] -> [' a   b', 'cc ddd']
+    Is hack.
+    """
+    # widths[n] holds the longest strlen for column n
+    ret = []
+    widths = [0] * len(data_2d[0])
+    for i in range(len(widths)):
+        widths[i] = 1 + len(str(max(data_2d, key=lambda x: len(str(x[i])))[i]))
+    for i in range(len(data_2d)):
+        line = ""
+        for j in range(len(data_2d[i])):
+            line += '{0:>{width}}'.format(data_2d[i][j], width=widths[j])
+        ret.append(line)
+    return ret
 
 
-def setup(bot):
-    bot.memory['kicker_manager'] = KickerManager()
+class KickerManager(object):
 
-
-class KickerManager:
+    """
+    CLI/IRC ladder interaction
+    """
 
     def __init__(self):
-        self.players = {}
-        self.games = []
-        self.events = []
-        # Load and backup log file
-        with open(LOG_FILE, 'r') as log:
-            kicker_log = json.load(log)
-        shutil.copyfile(LOG_FILE, LOG_FILE + '_backup')
-        self._load_from_log(kicker_log)
-        self.write_index_html()
-
-    def _load_from_log(self, log):
-        events = log['events']
-        for e in events:
-            if e['type'] == "AddPlayerEvent":
-                self._add_event(AddPlayerEvent.from_json(e))
-            elif e['type'] == "AddGameEvent":
-                self._add_event(AddGameEvent.from_json(e))
-            else:
-                assert False, "failed to load event: " + str(e)
-
-    def _add_event(self, event):
-        self.events.append(event)
-        reply = self.events[-1].processEvent(self.players, self.games)
-        return reply
-
-    def save_to_log(self):
-        to_save = {}
-        to_save['events'] = []
-        for e in self.events:
-            to_save['events'].append(e.to_json())
-        with open(LOG_FILE, 'w') as log:
-            json.dump(
-                to_save,
-                log,
-                sort_keys=True,
-                indent=4,
-                separators=(',', ': '))
-
-    def _add_player(self, command):
-        ret = []
-        for name in command.name:
-            ret.append(self._add_event(AddPlayerEvent(name)))
-        self.save_to_log()
-        self.write_index_html()
-        return ret
-
-    def _add_game(self, command):
-        ret = self._add_event(
-            AddGameEvent(
-                command.team_a
-                + [command.result]
-                + command.team_b),
-        )
-        self.save_to_log()
-        self.write_index_html()
-        return [ret]
-
-    def _pretty_print(self, data_tuples):
-        """
-        This returns the tuples in nice whitespace aligned columns.
-        And is hack. (list of strangs)
-        """
-        # widths holds the longest strlen
-        # in the list of tuples for that position
-        ret = []
-        widths = [0] * len(data_tuples[0])
-        for i in range(len(widths)):
-            widths[i] = 1 + \
-                len(str(max(data_tuples, key=lambda x: len(str(x[i])))[i]))
-        for i in range(len(data_tuples)):
-            s = ""
-            for j in range(len(data_tuples[i])):
-                s += '{0:>{width}}'.format(data_tuples[i][j], width=widths[j])
-            ret.append(s)
-        return ret
-
-    def _show_ladder(self, command):
-        if command.type == 'ELO':
-            elo_k = 24
-            if command.options:
-                try:
-                    elo_k = int(command.options[0])
-                except ValueError:
-                    return "Wanted a number. got {}".format(
-                        command.options[0])
-            ladder = ELOLadder(K=elo_k)
-        elif command.type == 'basic':
-            ladder = BasicLadder()
-        elif command.type == 'scaled':
-            ladder = BasicScaledLadder()
-        elif command.type == 'trueskill':
-            ladder = TrueSkillLadder()
-
-        data_tuples = ladder.process(self.players, self.games)
-        return self._pretty_print(data_tuples)
-
-    def _show_history(self, command):
-        ret = []
-        ret.append("games:")
-        i = 1
-        for g in self.games:
-            ret.append("{}: {}".format(i, g))
-            i += 1
-        return ret
-
-    def write_index_html(self):
-        data_tuples = TrueSkillLadder().process(self.players, self.games)
-        output = '<table border="1">'
-        for line in data_tuples:
-            output += '<tr>'
-            for col in line:
-                output += '<td>'
-                output += str(col)
-                output += '</td>'
-            output += '</tr>'
-        output += '\n'
-        i = 1
-        for g in self.games:
-            output += "{}: {}<br>".format(i, g)
-            i += 1
-        output = \
-"""<!DOCTYPE html>
-<html>
-<head>
-  <title>Page Title</title>
-</head>
-
-<body>{body}
-</body>
-
-</html>""".format(body=output)
-        with open("www/index.html", 'w') as web_page:
-            web_page.write(output)
+        self.data = kicker_backend.KickerData()
 
     def kicker_command(self, command):
         parser = argparse.ArgumentParser(prog=".kicker", add_help=False)
@@ -207,336 +70,141 @@ class KickerManager:
         history = subcommands.add_parser('history')
         history.set_defaults(func=self._show_history)
 
+        next_best = subcommands.add_parser('next')
+        next_best.set_defaults(func=self._best_matches)
+
+        whowins = subcommands.add_parser('whowins')
+        whowins.add_argument('team_a', type=str, nargs=2)
+        whowins.add_argument('team_b', type=str, nargs=2)
+        whowins.set_defaults(func=self._expected_outcome)
+
         args = parser.parse_args(command)
         if args.h:
-
-            return parser.format_help()
+            return [parser.format_help()]
         else:
             return args.func(args)
 
+    def _best_matches(self, command):
+        # ensure ladder is up to date
+        kicker_backend.cross_reference(
+            self.data.get_players(), self.data.get_games())
+        ladder = kicker_ladders.TrueSkillLadder()
+        ladder.process(self.data.get_players(), self.data.get_games())
 
-class KickerPlayer:
+        all_games = []
+        all_players = self.data.get_players().values()
+        seen_games = set()
 
-    def __init__(self, name):
-        self.name = name
+        for team_a in itertools.combinations(all_players, 2):
+            for team_b in itertools.combinations(all_players, 2):
+                if team_a + team_b in seen_games \
+                    or team_b + team_a in seen_games\
+                    or len([True for p in team_b if p in team_a]) > 0:
+                    continue
+                seen_games.add(team_a + team_b)
+                all_games.append(
+                    (team_a + team_b, trueskill.match_quality_hard(team_a, team_b)))
 
-    def __str__(self):
-        return 'Player: {}'.format(self.name)
+        teams = sorted(all_games, key=lambda x: x[1], reverse=True)
+        return [" ".join([p.name for p in t[0]]) + " %f" % t[1]  for t in teams[0:4]]
 
+    def _expected_outcome(self, command):
+        # ensure ladder is up to date
+        kicker_backend.cross_reference(
+            self.data.get_players(), self.data.get_games())
+        ladder = kicker_ladders.TrueSkillLadder()
+        ladder.process(self.data.get_players(), self.data.get_games())
 
-class KickerGame:
+        all_players = {p.name: p for p in self.data.get_players().values()}
+        team_a_players = [all_players[n] for n in command.team_a]
+        team_b_players = [all_players[n] for n in command.team_b]
+        return ["w:{0[0]:.2} d:{0[1]:.2} l:{0[2]:.2}".format(trueskill.chances(team_a_players, team_b_players))]
 
-    def __init__(self, command_words, players):
-        self.command = command_words
+    def _add_player(self, name):
+        ret = self.data.add_player(name)
+        self.data.save_to_log()
+        return [ret]
 
-        self.player_names = []
-        self.player_names.append(command_words[0])
-        self.player_names.append(command_words[1])
-        self.player_names.append(command_words[3])
-        self.player_names.append(command_words[4])
+    def _add_game(self, command):
+        ret = self.data.add_game(
+            command.team_a
+            + [command.result]
+            + command.team_b)
+        self.data.save_to_log()
+        self.write_index_html()
+        return [ret]
 
-        if command_words[2] == u'beat':
-            self.score_a = 2
-        elif command_words[2] == u'draw':
-            self.score_a = 1
-        elif command_words[2] == u'lost':
-            self.score_a = 0
-        else:
-            assert False, "beat|draw|lost is bad: {}".format(
-                " ".join(command_words))
-        self.score_b = 2 - self.score_a
+    def _show_ladder(self, command):
+        kicker_backend.cross_reference(
+            self.data.get_players(), self.data.get_games())
+        if command.type == 'ELO':
+            elo_k = 24
+            if command.options:
+                try:
+                    elo_k = int(command.options[0])
+                except ValueError:
+                    return "Wanted a number. got {}".format(
+                        command.options[0])
+            ladder = kicker_ladders.ELOLadder(K=elo_k)
+        elif command.type == 'basic':
+            ladder = kicker_ladders.BasicLadder()
+        elif command.type == 'scaled':
+            ladder = kicker_ladders.BasicScaledLadder()
+        elif command.type == 'trueskill':
+            ladder = kicker_ladders.TrueSkillLadder()
 
-        self.team_a = []
-        self.team_b = []
-        for p in self.player_names[0:2]:
-            assert p in players, "Player not found: {}".format(p)
-            self.team_a.append(players[p])
-        for p in self.player_names[2:4]:
-            assert p in players, "Player not found: {}".format(p)
-            self.team_b.append(players[p])
+        data = ladder.process(self.data.get_players(), self.data.get_games())
+        return pretty_print_2d(data)
 
-    def __str__(self):
-        return " ".join(self.command)
-
-
-class KickerLadder:
-
-    def process(self, players, games):
-        pass
-
-
-class BasicLadder(KickerLadder):
-
-    def __init__(self):
-        pass
-
-    def add_game(self, game):
-        for p in game.team_a + game.team_b:
-            p.games += 1
-        for p in game.team_a:
-            p.rank += game.score_a - game.score_b
-        for p in game.team_b:
-            p.rank -= game.score_b - game.score_a
-
-    def process(self, players, games):
-        for p in players.values():
-            p.rank = 0
-            p.games = 0
-
-        for g in games:
-            self.add_game(g)
-
-        ladder = sorted(
-            players.values(),
-            key=lambda x: (x.rank, x.games),
-            reverse=True)
-
+    def _show_history(self, command):
         ret = []
-        ret.append(("rank", "name", "points", "games"))
         i = 1
-        for player in ladder:
-            ret.append((
-                i,
-                player.name,
-                player.rank,
-                player.games,
-            ))
+        for g in self.data.get_games():
+            ret.append("{}: {}".format(i, g))
             i += 1
         return ret
 
-
-class BasicScaledLadder(KickerLadder):
-
-    def __init__(self):
-        pass
-
-    def add_game(self, game):
-        for p in game.team_a + game.team_b:
-            p.games += 1
-        for p in game.team_a:
-            p.rank += game.score_a - game.score_b
-        for p in game.team_b:
-            p.rank += game.score_b - game.score_a
-
-    def process(self, players, games):
-        for p in players.values():
-            p.rank = 0
-            p.games = 0
-
-        for g in games:
-            self.add_game(g)
-
-        ladder = sorted(
-            players.values(),
-            key=lambda x: (float(x.rank) / float(x.games), x.games),
-            reverse=True)
-
-        ret = []
-        ret.append(("rank", "name", "points/game"))
+    def write_index_html(self):
+        data_tuples = kicker_ladders.TrueSkillLadder().process(
+            self.data.get_players(), self.data.get_games())
+        output = '<table border="1">'
+        for line in data_tuples:
+            output += '<tr>'
+            for col in line:
+                output += '<td>'
+                output += str(col)
+                output += '</td>'
+            output += '</tr>'
+        output += '\n'
         i = 1
-        for player in ladder:
-            ret.append((
-                i,
-                player.name,
-                float(player.rank) / float(player.games),
-            ))
+        for g in self.data.get_games():
+            output += "{}: {}<br>".format(i, g)
             i += 1
-        return ret
+        output =\
+            """<!DOCTYPE html>
+    <html>
+    <head>
+    <title>Page Title</title>
+    </head>
 
+    <body>{body}
+    </body>
 
-class ArithmeticMean:
+    </html>""".format(body=output)
+        with open("www/index.html", 'w') as web_page:
+            web_page.write(output)
 
-    def combine(self, ranks):
-        return sum(ranks) * 0.5
-
-    def uncombine(self, val):
-        return val
-
-
-class GeometricMean:
-
-    def combine(self, ranks):
-        return reduce(lambda a, b: a * b, ranks) ** (1.0 / len(ranks))
-
-    def uncombine(self, val):
-        return val
-
-
-class HarmonicMean:
-
-    def combine(self, ranks):
-        return reduce(lambda a, b: 1.0 / (1.0 / a + 1.0 / b), ranks)
-
-    def uncombine(self, val):
-        return val
-
-
-class ELOLadder(KickerLadder):
-
-    def __init__(self, K=50, combiner=ArithmeticMean()):
-        self.K = K
-        self.combiner = combiner
-
-    def add_game(self, game):
-        """
-        Do an ELO rank with made up stuff for the 2 player bit.
-        ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
-        """
-        for p in game.team_a + game.team_b:
-            p.games += 1
-
-        r1 = self.combiner.combine([r.rank for r in game.team_a])
-        r2 = self.combiner.combine([r.rank for r in game.team_b])
-        R1 = 10 ** (r1 / 400)
-        R2 = 10 ** (r2 / 400)
-        E1 = R1 / (R1 + R2)
-        E2 = R2 / (R1 + R2)
-        total_score = game.score_a + game.score_b
-        rd1 = self.K * (game.score_a * 1.0 / total_score - E1)
-        rd2 = self.K * (game.score_b * 1.0 / total_score - E2)
-
-        for p in game.team_a:
-            p.rank += self.combiner.uncombine(rd1)
-        for p in game.team_b:
-            p.rank += self.combiner.uncombine(rd2)
-
-    def process(self, players, games):
-        for p in players.values():
-            p.rank = 1000
-            p.games = 0
-
-        for g in games:
-            self.add_game(g)
-
-        ladder = sorted(
-            players.values(),
-            key=lambda x: (x.rank, x.games),
-            reverse=True)
-
-        ret = []
-        ret.append(("rank", "name", "ELO", "games"))
-        for i in range(len(ladder)):
-            ret.append((
-                i + 1,
-                ladder[i].name,
-                int(ladder[i].rank),
-                ladder[i].games
-            ))
-        return ret
-
-
-class TrueSkillLadder(KickerLadder):
-
-    """
-    ref:
-    http://trueskill.org/
-    http://blogs.technet.com/b/apg/archive/2008/06/16/trueskill-in-f.aspx
-    http://www.moserware.com/2010/03/computing-your-skill.html
-    https://github.com/moserware/Skills
-    """
-
-    def __init__(self, mu=25.0, sigma=25.0 / 3):
-        self.mu = mu
-        self.sigma = sigma
-
-    def add_game(self, game):
-        for p in game.team_a + game.team_b:
-            p.games += 1
-        trueskill.calculate_nvn(
-            game.team_a, game.team_b, game.score_a, game.score_b)
-
-    def process(self, players, games):
-        for p in players.values():
-            p.mu = self.mu
-            p.sigma = self.sigma
-            p.games = 0
-
-        for g in games[:-1]:
-            self.add_game(g)
-
-        ladder_last = sorted(
-            players.values(),
-            key=lambda x: (x.mu - 1 * x.sigma),
-            reverse=True)
-
-        self.add_game(games[-1])
-
-        ladder = sorted(
-            players.values(),
-            key=lambda x: (x.mu - 1 * x.sigma),
-            reverse=True)
-        diff = []
-        for p in ladder:
-            diff.append(ladder_last.index(p))
-
-        ret = []
-        ret.append(("rank", "name", "change", "lvl", "mu", "sigma"))
-        for i in range(len(ladder)):
-            ret.append((
-                str(i + 1),
-                str(ladder[i].name),
-                str(diff[i] - i),
-                str(int(ladder[i].mu - 1 * ladder[i].sigma)),
-                "{:.3}".format(ladder[i].mu),
-                "{:.3}".format(ladder[i].sigma),
-            ))
-        return ret
-
-
-class KickerEvent:
-
-    def processEvent(self, players, games):
-        pass
-
-
-class AddPlayerEvent(KickerEvent):
-
-    def __init__(self, player):
-        self.player = KickerPlayer(player)
-
-    def processEvent(self, players, games):
-        players[self.player.name] = self.player
-        return 'added: ' + str(self.player)
-
-    def to_json(self):
-        ret = {}
-        ret['type'] = 'AddPlayerEvent'
-        ret['player'] = self.player.name
-        return ret
-
-    @staticmethod
-    def from_json(the_json):
-        assert the_json['type'] == 'AddPlayerEvent'
-        return AddPlayerEvent(the_json['player'])
-
-
-class AddGameEvent(KickerEvent):
-
-    def __init__(self, command_words):
-        self.command_words = command_words
-
-    def processEvent(self, players, games):
-        game = KickerGame(self.command_words, players)
-        games.append(game)
-        return 'added: ' + str(game)
-
-    def to_json(self):
-        ret = {}
-        ret['type'] = 'AddGameEvent'
-        ret['command'] = " ".join(self.command_words)
-        return ret
-
-    @staticmethod
-    def from_json(the_json):
-        assert the_json['type'] == 'AddGameEvent'
-        return AddGameEvent(the_json['command'].split())
 
 if __name__ == '__main__':
     k = KickerManager()
     # k.kicker_command(["-h"])
     # k.kicker_command(["ladder", "ELO", "60"])
-    print "\n".join(k.kicker_command( ["ladder"]))
-    # k.kicker_command( ["history"])
-    # k.kicker_command(["ladder", "-h"])
+    print "\n".join(k.kicker_command(["ladder"]))
     print "\n".join(k.kicker_command(["ladder", "ELO"]))
+    print "\n".join(k.kicker_command(["ladder", "basic"]))
+    print "\n".join(k.kicker_command(["ladder", "scaled"]))
+    print "\n".join(k.kicker_command(["history"]))
+    # k.kicker_command(["ladder", "-h"])
     k.write_index_html()
+    print "\n".join(k.kicker_command(["next"]))
+    print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
