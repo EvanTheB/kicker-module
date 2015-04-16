@@ -1,0 +1,276 @@
+{
+    "events": [
+        {
+            "player": "evan",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "nick",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "andy",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "william",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "andy evan draw nick william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "mark",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "chris",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "mark nick beat chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick lost william andy",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan william beat nick chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "tim",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan tim draw andy chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "celine",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "william chris beat celine tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick chris draw evan william",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "rowan",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "yen",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "yen rowan beat mark evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william tim draw nick chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "tim rowan beat evan chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "mark celine beat evan chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william tim draw chris nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william evan beat nick tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "keith",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "nick evan beat keith tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "keith evan draw william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick rowan beat william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick mark draw andy evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william andy draw mark nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "keith andy draw evan nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy evan draw chris william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick keith beat andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris beat evan tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy celine beat evan nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william mark beat keith tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "tim nick beat william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "mark william draw tim nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan andy beat chris nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "adam",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan adam draw tim chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy adam beat tim chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy chris beat nick tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan william beat chris nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "paul",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "nick adam beat evan keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william nick beat evan celine",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "tet",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "tim tet beat chris mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick draw andy mark",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick william beat andy keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan tim lost william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat mark andy",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy chris beat william tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick rowan beat william keith",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "chrismc",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan chris draw mark tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan nick beat evan andy",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris draw andy adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris beat tim evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william nick beat evan andy",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy nick beat evan william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william andy beat nick evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "keith andy beat adam evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick andy draw celine william",
+            "type": "AddGameEvent"
+        }
+    ]
+}
