@@ -87,31 +87,55 @@ class KickerManager(object):
             return args.func(args)
 
     def _best_matches(self, command):
-        # ensure ladder is up to date
-        kicker_backend.cross_reference(
-            self.data.get_players(), self.data.get_games())
-        ladder = kicker_ladders.TrueSkillLadder()
-        ladder.process(self.data.get_players(), self.data.get_games())
-
-        all_games = []
+        def _get_dist(ladder_data):
+            dist = 0.
+            for row in ladder_data[1:]:
+                dist += abs(float(row[2]))
+            return dist
+        print "yes"
         all_players = self.data.get_players().values()
         seen_games = set()
-
+        all_games = []
         for team_a in itertools.combinations(all_players, 2):
             for team_b in itertools.combinations(all_players, 2):
                 if team_a + team_b in seen_games \
-                    or team_b + team_a in seen_games\
-                    or len([True for p in team_b if p in team_a]) > 0:
+                        or team_b + team_a in seen_games\
+                        or len([True for p in team_b if p in team_a]) > 0:
                     continue
                 seen_games.add(team_a + team_b)
+                # get next ladder
+                kicker_backend.cross_reference(
+                    self.data.get_players(), self.data.get_games())
+                ladder = kicker_ladders.TrueSkillLadder()
+                data = ladder.process(self.data.get_players(),
+                                      self.data.get_games())
+
+                results = trueskill.chances(team_a, team_b)
+                match_worth = 0.
+                for prob, outcome in zip(results, ['beat', 'draw', 'lost']):
+                    game = kicker_backend.KickerGame(
+                        [p.name for p in team_a] + [outcome] + [p.name for p in team_b],
+                        self.data.get_players())
+
+                    # get next ladder
+                    kicker_backend.cross_reference(
+                        self.data.get_players(), self.data.get_games() + [game])
+                    ladder = kicker_ladders.TrueSkillLadder()
+                    data = ladder.process(self.data.get_players(),
+                                          self.data.get_games() + [game])
+                    match_worth += prob * _get_dist(data)
                 all_games.append(
-                    (team_a + team_b, trueskill.match_quality_hard(team_a, team_b)))
+                    (team_a + team_b, match_worth))
+
         if command.players:
             for name in command.players:
-                all_games = [g for g in all_games if name in [p.name for p in g[0]]]
+                all_games = [
+                    g for g in all_games if name in [
+                        p.name for p in g[0]]]
 
         teams = sorted(all_games, key=lambda x: x[1], reverse=True)
-        return [" ".join([p.name for p in t[0]]) + " %f" % t[1]  for t in teams[0:4]]
+        return [" ".join([p.name for p in t[0]]) + " %f" % t[1]
+                for t in teams[0:20]]
 
     def _expected_outcome(self, command):
         # ensure ladder is up to date
@@ -123,13 +147,16 @@ class KickerManager(object):
         all_players = {p.name: p for p in self.data.get_players().values()}
         team_a_players = [all_players[n] for n in command.team_a]
         team_b_players = [all_players[n] for n in command.team_b]
-        return ["w:{0[0]:.2} d:{0[1]:.2} l:{0[2]:.2}".format(trueskill.chances(team_a_players, team_b_players))]
+        return [
+            "w:{0[0]:.2} d:{0[1]:.2} l:{0[2]:.2}".format(
+                trueskill.chances(
+                    team_a_players,
+                    team_b_players))]
 
     def _add_player(self, command):
         ret = self.data.add_player(command.name)
         self.data.save_to_log()
         return [ret]
-
 
     def _add_game(self, command):
         ret = self.data.add_game(
@@ -169,7 +196,6 @@ class KickerManager(object):
             ret.append("{}: {}".format(i, g))
             i += 1
         return ret
-
 
     def write_index_html(self):
         data_tuples = kicker_ladders.TrueSkillLadder().process(
@@ -216,4 +242,3 @@ if __name__ == '__main__':
     print "\n".join(k.kicker_command(["next"]))
     print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
     print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
-
