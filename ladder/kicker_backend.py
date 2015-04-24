@@ -1,6 +1,7 @@
 import os
 import shutil
 import json
+import copy
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 

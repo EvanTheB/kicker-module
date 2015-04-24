@@ -271,6 +271,26 @@
         {
             "command": "nick andy draw celine william",
             "type": "AddGameEvent"
+        },
+        {
+            "player": "james",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "player": "jiaquan",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "rowan chrismc beat jiaquan james",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william andy beat evan rowan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan andy lost rowan william",
+            "type": "AddGameEvent"
         }
     ]
 }
