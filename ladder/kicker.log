@@ -291,6 +291,22 @@
         {
             "command": "evan andy lost rowan william",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "evan tet beat william adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william keith beat evan adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan chrismc draw william adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan adam lost tet william",
+            "type": "AddGameEvent"
         }
     ]
 }

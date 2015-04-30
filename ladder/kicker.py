@@ -92,7 +92,7 @@ class KickerManager(object):
             for row in ladder_data[1:]:
                 dist += abs(float(row[2]))
             return dist
-        print "yes"
+        print "yes2"
         all_players = self.data.get_players().values()
         seen_games = set()
         all_games = []
@@ -103,6 +103,15 @@ class KickerManager(object):
                         or len([True for p in team_b if p in team_a]) > 0:
                     continue
                 seen_games.add(team_a + team_b)
+                do_continue = False
+                if command.players:
+                    for name in command.players:
+                        if name not in [p.name for p in team_a + team_b]:
+                            # print [p.name for p in team_a + team_b]
+                            do_continue = True
+                            break
+                if do_continue:
+                    continue
                 # get next ladder
                 kicker_backend.cross_reference(
                     self.data.get_players(), self.data.get_games())
@@ -119,7 +128,9 @@ class KickerManager(object):
 
                     # get next ladder
                     kicker_backend.cross_reference(
-                        self.data.get_players(), self.data.get_games() + [game])
+                        self.data.get_players(),
+                        self.data.get_games() +
+                        [game])
                     ladder = kicker_ladders.TrueSkillLadder()
                     data = ladder.process(self.data.get_players(),
                                           self.data.get_games() + [game])
@@ -127,11 +138,6 @@ class KickerManager(object):
                 all_games.append(
                     (team_a + team_b, match_worth))
 
-        if command.players:
-            for name in command.players:
-                all_games = [
-                    g for g in all_games if name in [
-                        p.name for p in g[0]]]
 
         teams = sorted(all_games, key=lambda x: x[1], reverse=True)
         return [" ".join([p.name for p in t[0]]) + " %f" % t[1]
@@ -198,32 +204,49 @@ class KickerManager(object):
         return ret
 
     def write_index_html(self):
+        kicker_backend.cross_reference(
+            self.data.get_players(), self.data.get_games())
         data_tuples = kicker_ladders.TrueSkillLadder().process(
             self.data.get_players(), self.data.get_games())
-        output = '<table border="1">'
+        output = ""
+        output += "Trueskill ladder ranked on mu - 3*sigma (P(skill>level)~0.99)<br>\n"
+        output += '<table border="1">\n'
         for line in data_tuples:
             output += '<tr>'
             for col in line:
                 output += '<td>'
                 output += str(col)
                 output += '</td>'
-            output += '</tr>'
-        output += '\n'
+            output += '</tr>\n'
+        output += '</table>\n'
+
+        output += '\n<p>Next most awesome matches (by how much the ladder will change(andystyle)): <br>'
+        self.players = None
+        matches = self._best_matches(self)
+        for l in matches:
+            output += l + '<br>\n'
+
+        output += '\n<p>Game history: <br>'
         i = 1
         for g in self.data.get_games():
             output += "{}: {}<br>".format(i, g)
             i += 1
-        output =\
-            """<!DOCTYPE html>
-    <html>
-    <head>
-    <title>Page Title</title>
-    </head>
 
-    <body>{body}
-    </body>
 
-    </html>""".format(body=output)
+        output = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <title>Sweet Kicker Ladder</title>
+                </head>
+
+                <body>
+                <marquee>WELCOME TO LADDER</marquee>
+                {body}
+                </body>
+
+                </html>
+                """.format(body=output)
         with open("www/index.html", 'w') as web_page:
             web_page.write(output)
 
@@ -233,12 +256,12 @@ if __name__ == '__main__':
     # k.kicker_command(["-h"])
     # k.kicker_command(["ladder", "ELO", "60"])
     print "\n".join(k.kicker_command(["ladder"]))
-    print "\n".join(k.kicker_command(["ladder", "ELO"]))
-    print "\n".join(k.kicker_command(["ladder", "basic"]))
-    print "\n".join(k.kicker_command(["ladder", "scaled"]))
-    print "\n".join(k.kicker_command(["history"]))
+    # print "\n".join(k.kicker_command(["ladder", "ELO"]))
+    # print "\n".join(k.kicker_command(["ladder", "basic"]))
+    # print "\n".join(k.kicker_command(["ladder", "scaled"]))
+    # print "\n".join(k.kicker_command(["history"]))
     # k.kicker_command(["ladder", "-h"])
     k.write_index_html()
-    print "\n".join(k.kicker_command(["next"]))
-    print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
-    print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
+    # print "\n".join(k.kicker_command(["next"]))
+    # print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
+    # print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
