@@ -92,56 +92,60 @@ class KickerManager(object):
             for row in ladder_data[1:]:
                 dist += abs(float(row[2]))
             return dist
-        print "yes2"
+
+        def _get_game_list(players, game_filter):
+            seen_games = set()
+            for team_a in itertools.combinations(players, 2):
+                for team_b in itertools.combinations(players, 2):
+                    if team_a + team_b in seen_games \
+                            or team_b + team_a in seen_games\
+                            or len([True for p in team_b if p in team_a]) > 0:
+                        continue
+                    seen_games.add(team_a + team_b)
+                    if game_filter and game_filter([p.name for p in team_a + team_b]):
+                        continue
+                    yield team_a, team_b
+
+
         all_players = self.data.get_players().values()
-        seen_games = set()
-        all_games = []
-        for team_a in itertools.combinations(all_players, 2):
-            for team_b in itertools.combinations(all_players, 2):
-                if team_a + team_b in seen_games \
-                        or team_b + team_a in seen_games\
-                        or len([True for p in team_b if p in team_a]) > 0:
-                    continue
-                seen_games.add(team_a + team_b)
-                do_continue = False
-                if command.players:
+        game_filter = None
+        if command.players:
+            if len(command.players) >= 4:
+                all_players = [p for p in all_players if p.name in command.players]
+            else:
+                def game_filter(players):
                     for name in command.players:
-                        if name not in [p.name for p in team_a + team_b]:
-                            # print [p.name for p in team_a + team_b]
-                            do_continue = True
-                            break
-                if do_continue:
-                    continue
+                        if name not in players:
+                            return False
+        all_games = []
+        for team_a, team_b in _get_game_list(all_players, game_filter):
+            kicker_backend.cross_reference(
+                self.data.get_players(), self.data.get_games())
+            ladder = kicker_ladders.TrueSkillLadder()
+            data = ladder.process(self.data.get_players(),
+                                  self.data.get_games())
+            results = trueskill.chances(team_a, team_b)
+            match_worth = 0.
+            for prob, outcome in zip(results, ['beat', 'draw', 'lost']):
+                game = kicker_backend.KickerGame(
+                    [p.name for p in team_a] + [outcome] + [p.name for p in team_b],
+                    self.data.get_players())
+
                 # get next ladder
                 kicker_backend.cross_reference(
-                    self.data.get_players(), self.data.get_games())
+                    self.data.get_players(),
+                    self.data.get_games() +
+                    [game])
                 ladder = kicker_ladders.TrueSkillLadder()
                 data = ladder.process(self.data.get_players(),
-                                      self.data.get_games())
-
-                results = trueskill.chances(team_a, team_b)
-                match_worth = 0.
-                for prob, outcome in zip(results, ['beat', 'draw', 'lost']):
-                    game = kicker_backend.KickerGame(
-                        [p.name for p in team_a] + [outcome] + [p.name for p in team_b],
-                        self.data.get_players())
-
-                    # get next ladder
-                    kicker_backend.cross_reference(
-                        self.data.get_players(),
-                        self.data.get_games() +
-                        [game])
-                    ladder = kicker_ladders.TrueSkillLadder()
-                    data = ladder.process(self.data.get_players(),
-                                          self.data.get_games() + [game])
-                    match_worth += prob * _get_dist(data)
-                all_games.append(
-                    (team_a + team_b, match_worth))
+                                      self.data.get_games() + [game])
+                match_worth += prob * _get_dist(data)
+            all_games.append(
+                (match_worth, " ".join([p.name for p in team_a] + ["vs"] + [p.name for p in team_b] + ["\tv:{0:.2} w:{1[0]:.2} d:{1[1]:.2} l:{1[2]:.2}".format(match_worth, results)])))
 
 
-        teams = sorted(all_games, key=lambda x: x[1], reverse=True)
-        return [" ".join([p.name for p in t[0]]) + " %f" % t[1]
-                for t in teams[0:20]]
+        teams = sorted(all_games, reverse=True)
+        return [t[1] for t in teams][0:15]
 
     def _expected_outcome(self, command):
         # ensure ladder is up to date
@@ -233,7 +237,7 @@ class KickerManager(object):
             i += 1
 
 
-        output = """
+        full_output = """
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -248,20 +252,25 @@ class KickerManager(object):
                 </html>
                 """.format(body=output)
         with open("www/index.html", 'w') as web_page:
+            web_page.write(full_output)
+        with open("www/part.html", 'w') as web_page:
             web_page.write(output)
 
+        return output
 
 if __name__ == '__main__':
     k = KickerManager()
     # k.kicker_command(["-h"])
     # k.kicker_command(["ladder", "ELO", "60"])
-    print "\n".join(k.kicker_command(["ladder"]))
+    # print "\n".join(k.kicker_command(["ladder"]))
     # print "\n".join(k.kicker_command(["ladder", "ELO"]))
     # print "\n".join(k.kicker_command(["ladder", "basic"]))
     # print "\n".join(k.kicker_command(["ladder", "scaled"]))
     # print "\n".join(k.kicker_command(["history"]))
     # k.kicker_command(["ladder", "-h"])
-    k.write_index_html()
-    # print "\n".join(k.kicker_command(["next"]))
+    # print "\n".join(k.kicker_command(["next", "celine", "evan", "chris", "william", "nick"]))
     # print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
+    # print "\n".join(k.kicker_command(["next"]))
+
     # print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
+    print k.write_index_html()

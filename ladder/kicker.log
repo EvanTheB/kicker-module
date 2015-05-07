@@ -307,6 +307,30 @@
         {
             "command": "evan adam lost tet william",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "evan keith lost william adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan william beat mark nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "adam william beat keith nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat mark william",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william evan beat nick adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick draw william adam",
+            "type": "AddGameEvent"
         }
     ]
 }
