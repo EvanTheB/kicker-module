@@ -116,7 +116,9 @@ class KickerManager(object):
                 def game_filter(players):
                     for name in command.players:
                         if name not in players:
-                            return False
+                            return True
+                    return False
+
         all_games = []
         for team_a, team_b in _get_game_list(all_players, game_filter):
             kicker_backend.cross_reference(
@@ -270,7 +272,7 @@ if __name__ == '__main__':
     # k.kicker_command(["ladder", "-h"])
     # print "\n".join(k.kicker_command(["next", "celine", "evan", "chris", "william", "nick"]))
     # print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
-    # print "\n".join(k.kicker_command(["next"]))
+    print "\n".join(k.kicker_command(["next", "evan"]))
 
     # print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
-    print k.write_index_html()
+    # print k.write_index_html()

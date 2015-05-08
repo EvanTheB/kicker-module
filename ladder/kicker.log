@@ -331,6 +331,10 @@
         {
             "command": "evan nick draw william adam",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "william mark lost nick adam",
+            "type": "AddGameEvent"
         }
     ]
 }
