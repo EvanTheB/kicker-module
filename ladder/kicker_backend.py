@@ -1,22 +1,20 @@
 import os
-import shutil
 import json
 import copy
+import fcntl
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
-def cross_reference(players, games):
-    for p in players:
-        players[p].games = []
-    for g in games:
-        g.team_a_players = []
-        g.team_b_players = []
-        for p in g.team_a:
-            players[p].games.append(g)
-            g.team_a_players.append(players[p])
-        for p in g.team_b:
-            players[p].games.append(g)
-            g.team_b_players.append(players[p])
+
+class LockFile(object):
+    def __init__(self, file_obj):
+        self._file_obj = file_obj
+    def __enter__(self):
+        fcntl.lockf(self._file_obj, fcntl.LOCK_EX)# | fcntl.LOCK_NB)
+        return None
+    def __exit__(self, t_type, value, traceback):
+        fcntl.lockf(self._file_obj, fcntl.LOCK_UN)
+        return False
 
 class KickerData(object):
 
@@ -25,15 +23,11 @@ class KickerData(object):
         self.games = []
         self.events = []
 
-        self._load_from_log(LOG_FILE)
-
-    def _load_from_log(self, filename):
-        with open(filename, 'r') as log:
-            json_log = json.load(log)
-
-        # we backup only if it was valid json.
-        # (else we would nuke the backup...)
-        shutil.copyfile(filename, filename + '_backup')
+    def _load_from_json(self, log_file):
+        json_log = json.load(log_file)
+        self.players = {}
+        self.games = []
+        self.events = []
         events = json_log['events']
         for e in events:
             if e['type'] == "AddPlayerEvent":
@@ -43,36 +37,53 @@ class KickerData(object):
             else:
                 assert False, "failed to load event: " + str(e)
 
-    def save_to_log(self, filename=LOG_FILE):
+    def _save_to_log(self, log_file):
         to_save = {}
         to_save['events'] = []
         for e in self.events:
             to_save['events'].append(e.to_json())
-        with open(filename, 'w') as log:
-            json.dump(
-                to_save,
-                log,
-                sort_keys=True,
-                indent=4,
-                separators=(',', ': '))
+        json.dump(
+            to_save,
+            log_file,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': '))
 
     def _add_event(self, event):
         ret = event.process(self.players, self.games)
         self.events.append(event)
         return ret
 
-    def get_players(self):
-        return dict(self.players)
+    def get_players_games(self):
+        with open(LOG_FILE, 'r+') as log:
+            with LockFile(log):
+                self._load_from_json(log)
 
-    def get_games(self):
-        return list(self.games)
+        return copy.deepcopy(dict(self.players)), copy.deepcopy(list(self.games))
 
     def add_player(self, name):
-        return self._add_event(AddPlayerEvent(name))
+        with open(LOG_FILE, 'r+') as log:
+            with LockFile(log):
+                self._load_from_json(log)
+                event = AddPlayerEvent(name)
+                ret = event.process(self.players, self.games)
+                self.events.append(event)
+                log.seek(0)
+                self._save_to_log(log)
+
+        return ret
 
     def add_game(self, command_words):
-        return self._add_event(AddGameEvent(command_words))
+        with open(LOG_FILE, 'r+') as log:
+            with LockFile(log):
+                self._load_from_json(log)
+                event = AddGameEvent(command_words)
+                ret = event.process(self.players, self.games)
+                self.events.append(event)
+                log.seek(0)
+                self._save_to_log(log)
 
+        return ret
 
 
 class KickerPlayer(object):
@@ -80,6 +91,7 @@ class KickerPlayer(object):
     def __init__(self, name):
         assert name == str(name)
         self.name = name
+        self.games = []
 
     def __str__(self):
         return 'Player: {}'.format(self.name)
@@ -129,6 +141,9 @@ class KickerGame(object):
 
         for p in self.team_a + self.team_b:
             assert p in players, "Player not found: {}".format(p)
+            players[p].games.append(self)
+        self.team_a_players = [players[p] for p in self.team_a]
+        self.team_b_players = [players[p] for p in self.team_b]
 
     def __str__(self):
         return "Game: " + " ".join(self.command_words)
@@ -154,3 +169,15 @@ class AddGameEvent(object):
     def from_json(the_json):
         assert the_json['type'] == 'AddGameEvent'
         return AddGameEvent(the_json['command'].split())
+
+if __name__ == '__main__':
+    import random
+    import time
+
+    k = KickerData()
+    # test concurrent log writes
+    thread = str(random.randint(0, 100))
+    print thread
+    for x in range(100):
+        time.sleep(0.01)
+        k.add_player(thread + '_' + str(x))

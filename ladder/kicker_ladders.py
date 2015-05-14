@@ -1,27 +1,42 @@
 import trueskill
 
 
+class PlayerWrapper(object):
+
+    """
+    using this to wrap a KickerPlayer
+    so I can munge in values like score
+    """
+
+    def __init__(self, player):
+        self.player = player
+
+
 class BasicLadder(object):
 
     def __init__(self):
         self.players = {}
 
     def add_game(self, game):
-        for p in game.team_a_players:
-            p.score += game.score_a - game.score_b
-        for p in game.team_b_players:
-            p.score -= game.score_a - game.score_b
+        for p in game.team_a:
+            self.players[p].score += game.score_a - game.score_b
+            self.players[p].games += 1
+        for p in game.team_b:
+            self.players[p].score -= game.score_a - game.score_b
+            self.players[p].games += 1
 
     def process(self, players, games):
-        for _, p in players.items():
+        self.players = {n: PlayerWrapper(p) for n, p in players.items()}
+        for p in self.players.values():
             p.score = 0
+            p.games = 0
 
         for g in games:
             self.add_game(g)
 
         ladder = sorted(
-            players.values(),
-            key=lambda x: (x.score, len(x.games)),
+            self.players.values(),
+            key=lambda x: (x.score, x.games),
             reverse=True)
 
         ret = []
@@ -30,9 +45,9 @@ class BasicLadder(object):
         for player in ladder:
             ret.append((
                 i,
-                player.name,
+                player.player.name,
                 player.score,
-                len(player.games),
+                player.games,
             ))
             i += 1
         return ret
@@ -41,27 +56,30 @@ class BasicLadder(object):
 class BasicScaledLadder(object):
 
     def __init__(self):
-        pass
+        self.players = {}
 
     def add_game(self, game):
-        for p in game.team_a_players:
-            p.rank += game.score_a - game.score_b
-        for p in game.team_b_players:
-            p.rank -= game.score_a - game.score_b
+        for p in game.team_a:
+            self.players[p].score += game.score_a - game.score_b
+            self.players[p].games += 1
+        for p in game.team_b:
+            self.players[p].score -= game.score_a - game.score_b
+            self.players[p].games += 1
 
     def process(self, players, games):
-        for p in players.values():
-            p.rank = 0
+        self.players = {n: PlayerWrapper(p) for n, p in players.items()}
+        for p in self.players.values():
+            p.score = 0
+            p.games = 0
 
         for g in games:
             self.add_game(g)
 
         ladder = sorted(
-            players.values(),
+            self.players.values(),
             key=lambda x: (
-                float(x.rank)
-                / (1E-30 + float(len(x.games)))
-                ,len(x.games)
+                float(x.score)
+                / (1E-30 + float(x.games)), x.games
             ),
             reverse=True)
 
@@ -71,16 +89,18 @@ class BasicScaledLadder(object):
         for player in ladder:
             ret.append((
                 i,
-                player.name,
-                float(player.rank)
-                / (1E-30 + float(len(player.games))),
+                player.player.name,
+                float(player.score)
+                / (1E-30 + float(player.games)),
             ))
             i += 1
         return ret
 
+
 class ELOLadder(object):
 
     def __init__(self, K=24):
+        self.players = {}
         self.K = K
 
     def add_game(self, game):
@@ -89,8 +109,10 @@ class ELOLadder(object):
         ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
         """
 
-        r1 = sum([r.rank for r in game.team_a_players]) / float(len(game.team_a_players))
-        r2 = sum([r.rank for r in game.team_b_players]) / float(len(game.team_b_players))
+        r1 = sum([self.players[p].rank for p in game.team_a]) / \
+            float(len(game.team_a))
+        r2 = sum([self.players[p].rank for p in game.team_b]) / \
+            float(len(game.team_b))
         R1 = 10. ** (r1 / 400.)
         R2 = 10. ** (r2 / 400.)
         E1 = R1 / (R1 + R2)
@@ -99,21 +121,25 @@ class ELOLadder(object):
         rd1 = self.K * (float(game.score_a) / total_score - E1)
         rd2 = self.K * (float(game.score_b) / total_score - E2)
 
-        for p in game.team_a_players:
-            p.rank += rd1
-        for p in game.team_b_players:
-            p.rank += rd2
+        for p in game.team_a:
+            self.players[p].rank += rd1
+            self.players[p].games += 1
+        for p in game.team_b:
+            self.players[p].rank += rd2
+            self.players[p].games += 1
 
     def process(self, players, games):
-        for p in players.values():
+        self.players = {n: PlayerWrapper(p) for n, p in players.items()}
+        for p in self.players.values():
             p.rank = 1000
+            p.games = 0
 
         for g in games:
             self.add_game(g)
 
         ladder = sorted(
-            players.values(),
-            key=lambda x: (x.rank, len(x.games)),
+            self.players.values(),
+            key=lambda x: (x.rank, x.games),
             reverse=True)
 
         ret = []
@@ -121,11 +147,12 @@ class ELOLadder(object):
         for i in range(len(ladder)):
             ret.append((
                 i + 1,
-                ladder[i].name,
+                ladder[i].player.name,
                 int(ladder[i].rank),
-                len(ladder[i].games)
+                ladder[i].games
             ))
         return ret
+
 
 class TrueSkillLadder(object):
 
@@ -138,29 +165,43 @@ class TrueSkillLadder(object):
     """
 
     def __init__(self):
-        pass
+        self.players = {}
+
+    def chances(self, team_a, team_b):
+        return trueskill.chances(
+            [self.players[p] for p in team_a],
+            [self.players[p] for p in team_b]
+        )
 
     def add_game(self, game):
         trueskill.calculate_nvn(
-            game.team_a_players, game.team_b_players, game.score_a, game.score_b)
+            [self.players[p] for p in game.team_a],
+            [self.players[p] for p in game.team_b],
+            game.score_a,
+            game.score_b)
 
     def process(self, players, games):
-        for p in players.values():
+        self.players = {n: PlayerWrapper(p) for n, p in players.items()}
+        for p in self.players.values():
+            p.games = 0
             p.mu = 25.
-            p.sigma = 25./3
+            p.sigma = 25. / 3
+
         for g in games[:-1]:
             self.add_game(g)
 
+        trueskill_sort = lambda x: (x.mu - 3 * x.sigma)
+
         ladder_last = sorted(
-            players.values(),
-            key=lambda x: (x.mu - 3 * x.sigma),
+            self.players.values(),
+            key=trueskill_sort,
             reverse=True)
 
         self.add_game(games[-1])
 
         ladder = sorted(
-            players.values(),
-            key=lambda x: (x.mu - 3 * x.sigma),
+            self.players.values(),
+            key=trueskill_sort,
             reverse=True)
         diff = []
         for p in ladder:
@@ -171,9 +212,9 @@ class TrueSkillLadder(object):
         for i in range(len(ladder)):
             ret.append((
                 str(i + 1),
-                str(ladder[i].name),
+                str(ladder[i].player.name),
                 str(diff[i] - i),
-                str(int(ladder[i].mu - 3 * ladder[i].sigma)),
+                str(int(trueskill_sort(ladder[i]))),
                 "{:.3}".format(ladder[i].mu),
                 "{:.3}".format(ladder[i].sigma),
             ))

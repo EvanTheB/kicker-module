@@ -14,13 +14,14 @@ class index:
         <button id="button" onclick="kicker()">kickify</button>
         <input type="text" id="KICKER_INPUT">
         <div id="KICKER_OUTPUT">
-        Here goeth the text
+        Here goes the output, try add [player], game [a b] {beat,lost,draw} [c d], next [names], whowins [names]
+        WARNING next command is SLOW
         </div>
         <script>
         function kicker()
         {
             var textBox = document.getElementById('KICKER_INPUT');
-            kicker_text = httpGet('kicker' + textBox.value);
+            kicker_text = httpGet('kicker_' + textBox.value);
             var para = document.createElement("P");
             var t = document.createTextNode(kicker_text);
             para.appendChild(t);
@@ -29,7 +30,7 @@ class index:
         </script>
         """
 
-        with open("www/part.html") as f:
+        with open("part.html") as f:
             page = page + f.read()
 
 
@@ -43,9 +44,10 @@ class index:
 class KickerController(object):
     """docstring for KickerController"""
     def GET(self, text_input):
-        k = kicker.KickerManager()
         print text_input.split()
-        return "\n<br>".join(k.kicker_command(text_input.split()))
+        ret = k.kicker_command(text_input.split())
+        k.write_index_html()
+        return "\n<br>".join(ret)
 
 
 
@@ -53,8 +55,8 @@ class KickerController(object):
 if __name__ == "__main__":
     urls = (
         '/', 'index',
-        '/kicker(.*)', 'KickerController'
+        '/kicker_(.*)', 'KickerController'
     )
-
+    k = kicker.KickerManager()
     app = web.application(urls, globals())
     app.run()
