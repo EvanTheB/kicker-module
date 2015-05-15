@@ -335,6 +335,18 @@
         {
             "command": "william mark lost nick adam",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "william chris draw evan nick",
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "carlos",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan chris beat william adam",
+            "type": "AddGameEvent"
         }
     ]
 }

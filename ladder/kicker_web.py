@@ -21,10 +21,12 @@ class index:
         function kicker()
         {
             var textBox = document.getElementById('KICKER_INPUT');
-            kicker_text = httpGet('kicker_' + textBox.value);
+            kicker_text = httpGet('kicker_' + textBox.value).split("<br>");
             var para = document.createElement("P");
-            var t = document.createTextNode(kicker_text);
-            para.appendChild(t);
+            for (i = 0; i < kicker_text.length; i++){
+                para.appendChild(document.createTextNode(kicker_text[i]));
+                para.appendChild(document.createElement("BR"));
+            }
             document.getElementById("KICKER_OUTPUT").appendChild(para);
         }
         </script>
