@@ -347,6 +347,14 @@
         {
             "command": "evan chris beat william adam",
             "type": "AddGameEvent"
+        },
+        {
+            "player": "claire",
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "evan rowan beat claire chris",
+            "type": "AddGameEvent"
         }
     ]
 }

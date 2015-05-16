@@ -13,7 +13,7 @@ import kicker_ladders
 import kicker_backend
 import trueskill
 
-WEB_PART = os.path.join(os.path.dirname(__file__), 'part.html')
+PART_HTML = os.path.join(os.path.dirname(__file__), 'part.html')
 
 def pretty_print_2d(data_2d):
     """
@@ -260,7 +260,7 @@ class KickerManager(object):
 
                 </html>
                 """.format(body=output)
-        with open(WEB_PART, 'w') as web_page:
+        with open(PART_HTML, 'w') as web_page:
             web_page.write(output)
 
         return output

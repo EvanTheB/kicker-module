@@ -7,14 +7,19 @@
 <!-- <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script> -->
 <!-- <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> -->
 
-<script>
-function httpGet(theUrl)
+<script type="text/javascript">
+function httpGet(theUrl, onload)
 {
     var xmlHttp = null;
     xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", theUrl, false );
-    xmlHttp.send( null );
-    return xmlHttp.responseText;
+    xmlHttp.open( "GET", theUrl);
+    xmlHttp.onreadystatechange = function(){
+        if (this.readyState == 4 && this.status == 200) {
+            var response = JSON.parse(this.responseText);
+            onload(response);
+        }
+    }
+    xmlHttp.send();
 }
 </script>
 
