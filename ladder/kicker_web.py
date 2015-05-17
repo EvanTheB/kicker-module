@@ -1,6 +1,7 @@
 import web
 import os
 import json
+import urllib
 
 import kicker
 
@@ -26,14 +27,16 @@ class index:
                 var para = document.createElement("P");
                 var pre = document.createElement("PRE");
                 para.appendChild(pre);
-                for (i = 0; i < json_response.length; i++){
-                    pre.appendChild(document.createTextNode(json_response[i]));
-                    pre.appendChild(document.createElement("BR"));
-                }
-                document.getElementById("KICKER_OUTPUT").appendChild(para);
+                jQuery.each(json_response,
+                    function(i , line) {
+                        pre.appendChild(document.createTextNode(line));
+                        pre.appendChild(document.createElement("BR"));
+                    }
+                );
+                jQuery("#KICKER_OUTPUT").prepend(para);
             }
             var textBox = document.getElementById('KICKER_INPUT');
-            httpGet('kicker_' + encodeURIComponent(textBox.value), updateKicker);
+            jQuery.getJSON('kicker?' + jQuery.param({'command':encodeURIComponent(textBox.value)}), success=updateKicker);
         }
         </script>
         <button id="button" onclick="kicker()">kickify</button>
@@ -55,16 +58,18 @@ class index:
 
 class KickerController(object):
     """docstring for KickerController"""
-    def GET(self, text_input):
-        print text_input.split()
-        ret = k.kicker_command(text_input.split())
+    def GET(self):
+        user_input = web.input(command='')
+        user_command = urllib.unquote(user_input.command)
+        print user_command
+        ret = k.kicker_command(user_command.split())
         web.header('Content-Type', 'application/json')
         return json.dumps(ret)
 
 if __name__ == "__main__":
     urls = (
         '/', 'index',
-        '/kicker_(.*)', 'KickerController'
+        '/kicker', 'KickerController'
     )
     k = kicker.KickerManager()
     app = web.application(urls, globals())

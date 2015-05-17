@@ -13,7 +13,7 @@ import kicker_ladders
 import kicker_backend
 import trueskill
 
-PART_HTML = os.path.join(os.path.dirname(__file__), 'part.html')
+PART_HTML = os.path.join(os.path.dirname(__file__), 'static', 'part.html')
 
 def pretty_print_2d(data_2d):
     """

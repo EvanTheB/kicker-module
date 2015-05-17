@@ -119,7 +119,7 @@ def graph_skill_error(p, g, ladder):
         plt.fill_between(range(len(y)), y+err, y-err, alpha=0.25, color=COLOURS[i])
         plt.plot(range(len(y)), y, COLOURS[i] +'-', label = names[i])
         plt.plot(y)
-    plt.legend()
+    plt.legend(loc=3, ncol=len(names)/2)
     pylab.savefig('graph_error.png')
     plt.show()
 

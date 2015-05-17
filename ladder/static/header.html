@@ -4,25 +4,11 @@
 <title>Sweet Kicker Ladder</title>
 </head>
 <body>
-<!-- <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script> -->
-<!-- <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script> -->
-
-<script type="text/javascript">
-function httpGet(theUrl, onload)
+<script src="static/jquery-2.1.4.min.js"></script>
+<style type="text/css">
+.centre
 {
-    var xmlHttp = null;
-    xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", theUrl);
-    xmlHttp.onreadystatechange = function(){
-        if (this.readyState == 4 && this.status == 200) {
-            var response = JSON.parse(this.responseText);
-            onload(response);
-        }
-    }
-    xmlHttp.send();
+text-align:center
 }
-</script>
-
-
-
+</style>
 
