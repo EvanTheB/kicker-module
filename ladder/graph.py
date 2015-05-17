@@ -1,4 +1,5 @@
-import numpy
+import numpy as np
+import pylab
 import matplotlib.pyplot as plt
 import math
 
@@ -6,8 +7,11 @@ import math
 import kicker_ladders
 import kicker_backend
 
+COLOURS = ['b', 'g','r',  'c',  'm','y',  'k',]
+
 def get_subset(graph_data, names):
     return [[d for d in l if d[0] in names] for l in graph_data]
+
 
 def data_to_yarr(graph_data):
     names = [t[0] for t in graph_data[0]]
@@ -17,6 +21,7 @@ def data_to_yarr(graph_data):
         y = [float(l[0][1]) for l in data]
         ret.append(y)
     return ret
+
 
 def graph_ranks(p, g, ladder):
     def get_names_ranks(data):
@@ -35,7 +40,9 @@ def graph_ranks(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
+    pylab.savefig('graph_ranks.png')
     plt.show()
+
 
 def graph_level(p, g, ladder):
     def get_names_lvl(data):
@@ -51,7 +58,9 @@ def graph_level(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
+    pylab.savefig('graph_level.png')
     plt.show()
+
 
 def graph_skill(p, g, ladder):
     def get_names_skill(data):
@@ -70,7 +79,9 @@ def graph_skill(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
+    pylab.savefig('graph_skill.png')
     plt.show()
+
 
 def graph_skill_error(p, g, ladder):
     def get_names_skill(data):
@@ -78,16 +89,17 @@ def graph_skill_error(p, g, ladder):
         for l in data[1:]:
             ret.append((l[1], l[4]))
         return ret
+
     def get_names_err(data):
         ret = []
         for l in data[1:]:
             ret.append((l[1], float(l[5])))
         return ret
-    def get_top_n(data):
-        tup = sorted(data, key= lambda x: x[1])
-        names = [t[0] for t in tup[:5]]
-        return names
 
+    def get_top_n(data):
+        tup = sorted(data, key=lambda x: x[1])
+        names = [t[0] for t in tup[:6]]
+        return names
 
     graph_data = []
     err_data = []
@@ -99,10 +111,18 @@ def graph_skill_error(p, g, ladder):
     graph_data = get_subset(graph_data, names)
     err_data = get_subset(err_data, names)
 
-    for y, err in zip(data_to_yarr(graph_data), data_to_yarr(err_data)):
-        plt.errorbar(range(len(y)), y, yerr=err)
+    ys = data_to_yarr(graph_data)
+    errs = data_to_yarr(err_data)
+    for i in range(len(ys)):
+        err = np.array(errs[i])
+        y = np.array(ys[i])
+        plt.fill_between(range(len(y)), y+err, y-err, alpha=0.25, color=COLOURS[i])
+        plt.plot(range(len(y)), y, COLOURS[i] +'-', label = names[i])
         plt.plot(y)
+    plt.legend()
+    pylab.savefig('graph_error.png')
     plt.show()
+
 
 
 if __name__ == '__main__':
@@ -111,11 +131,7 @@ if __name__ == '__main__':
 
     ladder = kicker_ladders.TrueSkillLadder()
 
-    # graph_level(p, g, ladder)
-    # graph_ranks(p, g, ladder)
-    # graph_skill(p, g, ladder)
+    graph_level(p, g, ladder)
+    graph_ranks(p, g, ladder)
+    graph_skill(p, g, ladder)
     graph_skill_error(p, g, ladder)
-
-
-
-
