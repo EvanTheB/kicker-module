@@ -5,6 +5,17 @@ import fcntl
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
+def all_games(players, game_filter):
+            seen_games = set()
+            for team_a in itertools.combinations(players.keys(), 2):
+                for team_b in itertools.combinations(players.keys(), 2):
+                    if team_a + team_b in seen_games \
+                            or team_b + team_a in seen_games \
+                            or len([True for p in team_b if p in team_a]) > 0:
+                        continue
+                    seen_games.add(team_a + team_b)
+                    if game_filter(team_a + team_b):
+                        yield team_a, team_b
 
 class LockFile(object):
     def __init__(self, file_obj):

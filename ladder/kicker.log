@@ -363,6 +363,34 @@
         {
             "command": "evan rowan beat claire chris",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "andy tim draw william evan",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "chris andy beat keith tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat william adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "nick andy beat william chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy chris beat evan tim",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "william tim beat chris adam",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "yen rowan beat jiaquan tet",
+            "type": "AddGameEvent"
         }
     ]
 }

@@ -34,7 +34,7 @@ def graph_ranks(p, g, ladder):
         return ret
 
     graph_data = []
-    for i in range(1, len(g)):
+    for i in range(1, len(g) + 1):
         data = ladder.process(p, g[0:i])
         graph_data.append(get_names_ranks(data))
 
@@ -52,7 +52,7 @@ def graph_level(p, g, ladder):
         return ret
 
     graph_data = []
-    for i in range(1, len(g)):
+    for i in range(1, len(g) + 1):
         data = ladder.process(p, g[0:i])
         graph_data.append(get_names_lvl(data))
 
@@ -73,7 +73,7 @@ def graph_skill(p, g, ladder):
         return ret
 
     graph_data = []
-    for i in range(1, len(g)):
+    for i in range(1, len(g) + 1):
         data = ladder.process(p, g[0:i])
         graph_data.append(get_names_skill(data))
 
@@ -103,7 +103,7 @@ def graph_skill_error(p, g, ladder):
 
     graph_data = []
     err_data = []
-    for i in range(1, len(g)):
+    for i in range(1, len(g) + 1):
         data = ladder.process(p, g[0:i])
         graph_data.append(get_names_skill(data))
         err_data.append(get_names_err(data))
