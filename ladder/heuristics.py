@@ -44,6 +44,7 @@ class LadderDisruptionHeuristic(Heuristic):
         self.function = function
 
     def _get_dist(self, ladder_data):
+        # This counts a swap as '2'
         dist = 0.
         for row in ladder_data[1:]:
             dist += abs(float(row[2]))
@@ -224,7 +225,7 @@ def linear_clamped_function(x0, y0, x1, y1):
     c = (y0 * x1 - y1 * x0) / (x1 - x0)
 
     def lin(x):
-        return min(1, max(0, m * x + c))
+        return min(1., max(0., m * x + c))
     return lin
 
 
