@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import argparse
 import itertools
 import os
+import time
 
 import kicker_ladders
 import kicker_backend
@@ -152,7 +153,8 @@ class KickerManager(object):
             for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
                 game = kicker_backend.KickerGame(
                     team_a + (outcome,) + team_b,
-                    all_players)
+                    all_players,
+                    time.time())
 
                 data = ladder.process(all_players,
                                       games + [game])
@@ -272,7 +274,7 @@ if __name__ == '__main__':
     print "\n".join(k.kicker_command(["ladder", "ELO"]))
     print "\n".join(k.kicker_command(["ladder"]))
 
-    print "\n".join(k.kicker_command(["history"])[0:10])
+    print "\n".join(k.kicker_command(["history"]))
 
     print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
 
@@ -281,7 +283,7 @@ if __name__ == '__main__':
     # print "\n".join(k.kicker_command(["next"]))
 
     # print "\n".join(k.kicker_command(["add", "newplayer"]))
-    # print "\n".join(k.kicker_command(["game", "newplayer", "chris", "beat", "evan", "andy"]))
+    # print "\n".join(k.kicker_command(["game", "newplayer", "newplayer", "beat", "newplayer", "newplayer"]))
 
     print k.write_index_html()
     print "\n".join(k.kicker_command(["wrong"]))
