@@ -391,6 +391,18 @@
         {
             "command": "yen rowan beat jiaquan tet",
             "type": "AddGameEvent"
+        },
+        {
+            "command": "tim nick beat evan chris",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan jiaquan draw yen tet",
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "adam celine draw chris tim",
+            "type": "AddGameEvent"
         }
     ]
 }
