@@ -173,6 +173,12 @@ class TrueSkillLadder(object):
             [self.players[p] for p in team_b]
         )
 
+    def quality(self, team_a, team_b):
+        return trueskill.match_quality(
+            [self.players[p] for p in team_a],
+            [self.players[p] for p in team_b]
+        )
+
     def add_game(self, game):
         trueskill.calculate_nvn(
             [self.players[p] for p in game.team_a],

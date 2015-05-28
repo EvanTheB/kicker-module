@@ -1,3 +1,10 @@
+import trueskill
+import kicker_backend
+import kicker_ladders
+
+import time
+
+
 class Heuristic(object):
 
     """
@@ -23,76 +30,261 @@ class DrawChanceHeuristic(Heuristic):
         self.ladder = ladder
 
     def rate(self, team_a, team_b):
-        pass
+        return self.ladder.quality(team_a, team_b)
 
 
 class LadderDisruptionHeuristic(Heuristic):
 
     """andy style"""
 
-    def __init__(self, ladder):
+    def __init__(self, ladder, players, games, function):
         self.ladder = ladder
+        self.players = players
+        self.games = games
+        self.function = function
+
+    def _get_dist(self, ladder_data):
+        # This counts a swap as '2'
+        dist = 0.
+        for row in ladder_data[1:]:
+            dist += abs(float(row[2]))
+        return dist
 
     def rate(self, team_a, team_b):
-        pass
+        result_prob = self.ladder.chances(team_a, team_b)
+        match_worth = 0.
+        for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
+            game = kicker_backend.KickerGame(
+                team_a + (outcome,) + team_b,
+                self.players, 0)
+
+            data = self.ladder.process(self.players,
+                                       self.games + [game])
+            match_worth += prob * self._get_dist(data)
+        return self.function(match_worth)
 
 
 class TrueskillClumpingHeuristic(Heuristic):
 
     """Prefer similar skills"""
 
-    def __init__(self, ladder):
-        self.ladder = ladder
+    def __init__(self, data, function):
+        self.mus = {l[1]: float(l[4]) for l in data[1:]}
+        self.function = function
 
     def rate(self, team_a, team_b):
-        pass
+        skills = [self.mus[n] for n in team_a + team_b]
+        mean = sum(skills) / len(team_a + team_b)
+        return self.function(sum([abs(s - mean) for s in skills]))
 
 
 class SigmaReductionHeuristic(Heuristic):
 
     """Try to reduce sigmas"""
 
-    def __init__(self, ladder):
+    def __init__(self, ladder, players, games, function):
         self.ladder = ladder
+        self.players = players
+        self.games = games
+        self.function = function
+
+        self.sigmas = {}
+        data = self.ladder.process(self.players, self.games)
+        for row in data[1:]:
+            self.sigmas[row[1]] = float(row[5])
+
+    def _get_dist(self, ladder_data):
+        dist = 0.
+        for row in ladder_data[1:]:
+            dist += self.sigmas[row[1]] - float(row[5])
+        return dist
 
     def rate(self, team_a, team_b):
-        pass
+        result_prob = self.ladder.chances(team_a, team_b)
+        match_worth = 0.
+        for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
+            game = kicker_backend.KickerGame(
+                team_a + (outcome,) + team_b,
+                self.players, 0)
+
+            data = self.ladder.process(self.players,
+                                       self.games + [game])
+            match_worth += prob * self._get_dist(data)
+        return self.function(match_worth)
 
 
 class TimeSinceLastPlayedHeuristic(Heuristic):
 
     """Prefer not recent players"""
 
-    def __init__(self, ladder):
-        self.ladder = ladder
+    def __init__(self, players, games, function):
+        self.times = {p.name: p.create_time for p in players.values()}
+        for g in games:
+            for p in g.team_a + g.team_b:
+                self.times[p] = g.create_time
+        self.function = function
 
     def rate(self, team_a, team_b):
-        pass
+        return self.function(min(self.times[p] for p in team_a + team_b))
 
 
-class UnplayedMatchups(Heuristic):
+class UnplayedMatchupsHeuristic(Heuristic):
 
     """Nick style"""
 
-    def __init__(self, ladder):
-        self.ladder = ladder
+    def __init__(self, players, games, function):
+        self.function = function
+        self.played_with = {p: {opp: 0 for opp in players} for p in players}
+        self.played_vs = {p: {opp: 0 for opp in players} for p in players}
+        for g in games:
+            for p1 in g.team_a:
+                for p2 in g.team_b:
+                    self.played_vs[p1][p2] += 1
+                    self.played_vs[p2][p1] += 1
+        for g in games:
+            for p1 in g.team_a:
+                for p2 in g.team_a:
+                    if p1 == p2:
+                        continue
+                    self.played_with[p1][p2] += 1
+            for p1 in g.team_b:
+                for p2 in g.team_b:
+                    if p1 == p2:
+                        continue
+                    self.played_with[p1][p2] += 1
 
     def rate(self, team_a, team_b):
-        pass
+        vs = 0.
+        _with = 0.
+        for p1 in team_a:
+            for p2 in team_b:
+                vs += self.played_vs[p1][p2]
+        # double counting all these
+        for p1 in team_b:
+            for p2 in team_b:
+                if p1 == p2:
+                    continue
+                _with += self.played_with[p1][p2]
+        for p1 in team_a:
+            for p2 in team_a:
+                if p1 == p2:
+                    continue
+                _with += self.played_with[p1][p2]
+        _with /= 2  # remove double counting
+        # print vs, _with, team_a, team_b
+        return self.function(vs + _with)
 
 
+class DecoratorHeuristic(Heuristic):
 
-if __name__ == '__main__':
-    import kicker_backend
-    import kicker_ladders
+    """Decorate another one"""
+
+    def __init__(self, subheuristic, function):
+        self.subheuristic = subheuristic
+        self.function = function
+
+    def rate(self, team_a, team_b):
+        self.function(self.subheuristic.rate(team_a, team_b))
+
+
+class CombinerHeuristic(Heuristic):
+
+    """
+    Combine some
+    """
+
+    def __init__(self, a, b, function):
+        self.a = a
+        self.b = b
+        self.function = function
+
+
+    def rate(self, team_a, team_b):
+        return self.function(
+            self.a(team_a, team_b),
+            self.b(team_a, team_b)
+            )
+
+class LinearSumHeuristic(Heuristic):
+
+    """
+    Combine some linearly
+    """
+
+    def __init__(self, weight_heuristic_tuple):
+        self.wh = weight_heuristic_tuple
+        self.div = sum(tup[0] for tup in self.wh)
+
+    def rate(self, team_a, team_b):
+        vals = [tup[0] * tup[1].rate(team_a, team_b) for tup in self.wh]
+        return sum(vals) / self.div
+
+
+def linear_clamped_function(x0, y0, x1, y1):
+    m = (y1 - y0) / (x1 - x0)
+    c = (y0 * x1 - y1 * x0) / (x1 - x0)
+
+    def lin(x):
+        return min(1., max(0., m * x + c))
+    return lin
+
+
+def main():
+    import math
     data = kicker_backend.KickerData()
     players, games = data.get_players_games()
 
     pre_ladder = kicker_ladders.TrueSkillLadder()
     pre_data = pre_ladder.process(players, games)
 
-    all_games = kicker_backend.all_games(players)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    draws = DrawChanceHeuristic(pre_ladder)
+    # print "\n".join([str(x) for x in sorted(draws.rate_all(all_games),
+    # key=lambda x: x[0])])
 
-    DrawChanceHeuristic(pre_ladder)
+    linear_10 = linear_clamped_function(0., 0., 10., 1.)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    disrup = LadderDisruptionHeuristic(pre_ladder, players, games, linear_10)
+    # print "\n".join([str(x) for x in sorted(disrup.rate_all(all_games),
+    # key=lambda x: x[0])])
+
+    linear_3_10 = linear_clamped_function(3. * 4., 1., 10. * 4., 0.)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    clump = TrueskillClumpingHeuristic(pre_data, linear_3_10)
+    # print "\n".join([str(x) for x in sorted(clump.rate_all(all_games),
+    # key=lambda x: x[0])])
+
+    linear_0_1 = linear_clamped_function(0., 0., 1.0, 1.)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    sigmars = SigmaReductionHeuristic(pre_ladder, players, games, linear_0_1)
+    # print "\n".join([str(x) for x in sorted(sigmars.rate_all(all_games),
+    # key=lambda x: x[0])])
+
+    linear_week_month = linear_clamped_function(
+        time.time() - 7. * 24. * 60. * 60., 0., time.time() - 30. * 24. * 60. * 60., 1.)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    timesince = TimeSinceLastPlayedHeuristic(players, games, linear_week_month)
+    # print "\n".join([str(x) for x in sorted(timesince.rate_all(all_games),
+    # key=lambda x: x[0])])
+
+    linear_0_30 = linear_clamped_function(0., 1., 30., 0.)
+    all_games = kicker_backend.all_games(players, lambda x: True)
+    unplayed = UnplayedMatchupsHeuristic(players, games, linear_0_30)
+    # print "\n".join([str(x) for x in sorted(unplayed.rate_all(all_games),
+    # key=lambda x: x[0])])
+
+    lin_heur = [
+            (1., draws),
+            (1., disrup),
+            (1., clump),
+            (1., sigmars),
+            (1., timesince),
+            (1., unplayed),
+        ]
+    all_heur = LinearSumHeuristic(lin_heur)
+    print "\n".join([str(x) for x in sorted(all_heur.rate_all(all_games),
+    key=lambda x: x[0])])
 
 
+if __name__ == '__main__':
+    main()

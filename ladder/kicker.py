@@ -8,12 +8,16 @@ from __future__ import unicode_literals
 import argparse
 import itertools
 import os
+import time
+import sys
 
 import kicker_ladders
 import kicker_backend
 import trueskill
+import heuristics
 
 PART_HTML = os.path.join(os.path.dirname(__file__), 'static', 'part.html')
+
 
 def pretty_print_2d(data_2d):
     """
@@ -33,6 +37,70 @@ def pretty_print_2d(data_2d):
             line += '{0:>{width}}'.format(data_2d[i][j], width=widths[j])
         ret.append(line)
     return ret
+
+
+class HeuristicManager(object):
+
+    def __init__(self):
+        self.command = ["close_game",
+                        "disrupt",
+                        "class_warfare",
+                        "sigma",
+                        "time",
+                        "variety",
+                        "default"
+                        ]
+
+    def get_heuristic(self, ladder, players, games, command):
+
+        close_game = heuristics.DrawChanceHeuristic(ladder)
+        if command == "close_game":
+            return close_game
+
+        linear_10 = heuristics.linear_clamped_function(0., 0., 10., 1.)
+        disrupt = heuristics.LadderDisruptionHeuristic(
+            ladder, players, games, linear_10)
+        if command == "disrupt":
+            return disrupt
+
+        linear_3_10 = heuristics.linear_clamped_function(
+            3. * 4., 1., 10. * 4., 0.)
+        class_warfare = heuristics.TrueskillClumpingHeuristic(
+            ladder.process(players, games), linear_3_10)
+        if command == "class_warfare":
+            return class_warfare
+
+        linear_0_1 = heuristics.linear_clamped_function(0., 0., 1.0, 1.)
+        sigma = heuristics.SigmaReductionHeuristic(
+            ladder, players, games, linear_0_1)
+        if command == "sigma":
+            return sigma
+
+        linear_week_month = heuristics.linear_clamped_function(
+            time.time() - 7. * 24. * 60. * 60., 0.,
+            time.time() - 30. * 24. * 60. * 60., 1.)
+        playmore = heuristics.TimeSinceLastPlayedHeuristic(
+            players, games, linear_week_month)
+        if command == "playmore":
+            return playmore
+
+        linear_0_30 = heuristics.linear_clamped_function(0., 1., 30., 0.)
+        variety = heuristics.UnplayedMatchupsHeuristic(
+            players, games, linear_0_30)
+        if command == "variety":
+            return variety
+
+        lin_heur = [
+            (20., close_game),
+            (5., disrupt),
+            (10., class_warfare),
+            (2.5, sigma),
+            (5., playmore),
+            (5., variety),
+        ]
+        default = heuristics.LinearSumHeuristic(lin_heur)
+        if command == "default":
+            return default
 
 
 class KickerManager(object):
@@ -83,6 +151,10 @@ class KickerManager(object):
 
         next_best = subcommands.add_parser('next')
         next_best.add_argument('players', type=str, nargs='*')
+        next_best.add_argument('--heuristic',
+                               type=str,
+                               default='default',
+                               choices=HeuristicManager().command)
         next_best.set_defaults(func=self._best_matches)
 
         whowins = subcommands.add_parser('whowins')
@@ -96,33 +168,14 @@ class KickerManager(object):
         except KickerArgError as e:
             return str(e).split('\n')
 
-
-
-
     def _best_matches(self, command):
-        def _get_dist(ladder_data):
-            dist = 0.
-            for row in ladder_data[1:]:
-                dist += abs(float(row[2]))
-            return dist
-
-        def _get_game_list(players, game_filter):
-            seen_games = set()
-            for team_a in itertools.combinations(players.keys(), 2):
-                for team_b in itertools.combinations(players.keys(), 2):
-                    if team_a + team_b in seen_games \
-                            or team_b + team_a in seen_games \
-                            or len([True for p in team_b if p in team_a]) > 0:
-                        continue
-                    seen_games.add(team_a + team_b)
-                    if game_filter(team_a + team_b):
-                        yield team_a, team_b
-
-        all_players, games = self.data.get_players_games()
+        all_players, all_games = self.data.get_players_games()
+        ladder = kicker_ladders.TrueSkillLadder()
+        ladder.process(all_players, all_games)
 
         # set up players and game_filter such that
         # all combinations of players if filter()
-        # gives our potential list
+        # gives our list of potential games
         if command.players:
             if len(command.players) >= 4:
                 game_filter = lambda x: True
@@ -132,6 +185,7 @@ class KickerManager(object):
                 }
             else:
                 players = all_players
+
                 def game_filter(this_game_players):
                     for name in command.players:
                         if name not in this_game_players:
@@ -142,32 +196,23 @@ class KickerManager(object):
             players = all_players
 
         all_potential_games = []
-
         pre_ladder = kicker_ladders.TrueSkillLadder()
-        pre_data = pre_ladder.process(all_players, games)
-        ladder = kicker_ladders.TrueSkillLadder()
-        for team_a, team_b in _get_game_list(players, game_filter):
-            result_prob = pre_ladder.chances(team_a, team_b)
-            match_worth = 0.
-            for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
-                game = kicker_backend.KickerGame(
-                    team_a + (outcome,) + team_b,
-                    all_players)
+        pre_data = pre_ladder.process(all_players, all_games)
 
-                data = ladder.process(all_players,
-                                      games + [game])
-                match_worth += prob * _get_dist(data)
-            all_potential_games.append(
-                (match_worth, " ".join(
-                    list(team_a) +
-                    ["vs"] + list(team_b) +
-                    ["\tv:{0:.2} w:{1[0]:.2} d:{1[1]:.2} l:{1[2]:.2}".format(
-                        match_worth, result_prob)]
-                ))
-            )
+        games = kicker_backend.all_games(players, game_filter)
 
-        teams = sorted(all_potential_games, reverse=True)
-        return [t[1] for t in teams][0:15]
+        heur = HeuristicManager().get_heuristic(ladder, all_players, all_games, command.heuristic)
+        ratings = sorted(heur.rate_all(games), key=lambda x: x[0], reverse=True)
+
+        printable = [" ".join(
+            list(rating[1][0]) +
+            ["vs"] +
+            list(rating[1][1]) +
+            ["\tv:{0:.3} w:{1[0]:.2} d:{1[1]:.2} l:{1[2]:.2}".format(
+                rating[0], ladder.chances(rating[1][0], rating[1][1]))]
+        ) for rating in ratings]
+
+        return printable[0:8]
 
     def _expected_outcome(self, command):
         players, games = self.data.get_players_games()
@@ -239,7 +284,8 @@ class KickerManager(object):
             output += '</tr>\n'
         output += '</table>\n'
 
-        # output += '\n<p>Next most awesome matches (rated by how much the ladder will be changed (andystyle)): <br>'
+        # output += '\n<p>Next most awesome matches (rated by how much the
+        # ladder will be changed (andystyle)): <br>'
         output += '\n<p>Game history: <br>'
         i = 1
         for g in games:
@@ -267,22 +313,28 @@ class KickerManager(object):
 
 if __name__ == '__main__':
     k = KickerManager()
-    print "\n".join(k.kicker_command(["ladder", "basic"]))
-    print "\n".join(k.kicker_command(["ladder", "scaled"]))
-    print "\n".join(k.kicker_command(["ladder", "ELO"]))
-    print "\n".join(k.kicker_command(["ladder"]))
+    if len(sys.argv) > 1:
+        "\n".join(k.kicker_command(sys.argv[1:]))
+    else:
+        # print "\n".join(k.kicker_command(["ladder", "basic"]))
+        # print "\n".join(k.kicker_command(["ladder", "scaled"]))
+        # print "\n".join(k.kicker_command(["ladder", "ELO"]))
+        # print "\n".join(k.kicker_command(["ladder"]))
 
-    print "\n".join(k.kicker_command(["history"])[0:10])
+        # print "\n".join(k.kicker_command(["history"]))
 
-    print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan", "andy"]))
+        # print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan",
+        # "andy"]))
 
-    print "\n".join(k.kicker_command(["next", "celine", "evan", "chris", "william", "nick"]))
-    print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
-    # print "\n".join(k.kicker_command(["next"]))
+        print "\n".join(k.kicker_command(["next", "--heuristic", "class_warfare", "celine", "evan", "chris", "william", "nick"]))
+        print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
+        print "\n".join(k.kicker_command(["next", "--heuristic", "close_game", "evan"]))
+        # print "\n".join(k.kicker_command(["next"]))
 
-    # print "\n".join(k.kicker_command(["add", "newplayer"]))
-    # print "\n".join(k.kicker_command(["game", "newplayer", "chris", "beat", "evan", "andy"]))
+        # print "\n".join(k.kicker_command(["add", "newplayer"]))
+        # print "\n".join(k.kicker_command(["game", "newplayer", "newplayer",
+        # "beat", "newplayer", "newplayer"]))
 
-    print k.write_index_html()
-    print "\n".join(k.kicker_command(["wrong"]))
-
+        print k.write_index_html()
+        print "\n".join(k.kicker_command(["wrong"]))
+        print "\n".join(k.kicker_command(["next", "-h"]))

@@ -2,30 +2,38 @@ import os
 import json
 import copy
 import fcntl
+import itertools
+import time
 
 LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
 
+
 def all_games(players, game_filter):
-            seen_games = set()
-            for team_a in itertools.combinations(players.keys(), 2):
-                for team_b in itertools.combinations(players.keys(), 2):
-                    if team_a + team_b in seen_games \
-                            or team_b + team_a in seen_games \
-                            or len([True for p in team_b if p in team_a]) > 0:
-                        continue
-                    seen_games.add(team_a + team_b)
-                    if game_filter(team_a + team_b):
-                        yield team_a, team_b
+    seen_games = set()
+    for team_a in itertools.combinations(players.keys(), 2):
+        for team_b in itertools.combinations(players.keys(), 2):
+            if team_a + team_b in seen_games \
+                    or team_b + team_a in seen_games \
+                    or len([True for p in team_b if p in team_a]) > 0:
+                continue
+            seen_games.add(team_a + team_b)
+            if game_filter(team_a + team_b):
+                yield team_a, team_b
+
 
 class LockFile(object):
+
     def __init__(self, file_obj):
         self._file_obj = file_obj
+
     def __enter__(self):
-        fcntl.lockf(self._file_obj, fcntl.LOCK_EX)# | fcntl.LOCK_NB)
+        fcntl.lockf(self._file_obj, fcntl.LOCK_EX)  # | fcntl.LOCK_NB)
         return None
+
     def __exit__(self, t_type, value, traceback):
         fcntl.lockf(self._file_obj, fcntl.LOCK_UN)
         return False
+
 
 class KickerData(object):
 
@@ -76,7 +84,7 @@ class KickerData(object):
         with open(LOG_FILE, 'r+') as log:
             with LockFile(log):
                 self._load_from_json(log)
-                event = AddPlayerEvent(name)
+                event = AddPlayerEvent(name, time.time())
                 ret = event.process(self.players, self.games)
                 self.events.append(event)
                 log.seek(0)
@@ -88,7 +96,7 @@ class KickerData(object):
         with open(LOG_FILE, 'r+') as log:
             with LockFile(log):
                 self._load_from_json(log)
-                event = AddGameEvent(command_words)
+                event = AddGameEvent(command_words, time.time())
                 ret = event.process(self.players, self.games)
                 self.events.append(event)
                 log.seek(0)
@@ -99,10 +107,11 @@ class KickerData(object):
 
 class KickerPlayer(object):
 
-    def __init__(self, name):
+    def __init__(self, name, create_time):
         assert name == str(name)
         self.name = name
         self.games = []
+        self.create_time = create_time
 
     def __str__(self):
         return 'Player: {}'.format(self.name)
@@ -110,31 +119,34 @@ class KickerPlayer(object):
 
 class AddPlayerEvent(object):
 
-    def __init__(self, name):
+    def __init__(self, name, create_time):
         assert name not in ['beat', 'draw', 'lost', 'cake']
         self.name = name
+        self.create_time = create_time
 
     def process(self, players, games):
         assert self.name not in players
-        players[self.name] = KickerPlayer(self.name)
+        players[self.name] = KickerPlayer(self.name, self.create_time)
         return 'added: ' + str(players[self.name])
 
     def to_json(self):
         ret = {}
         ret['type'] = 'AddPlayerEvent'
         ret['player'] = self.name
+        ret['time'] = self.create_time
         return ret
 
     @staticmethod
     def from_json(the_json):
         assert the_json['type'] == 'AddPlayerEvent'
-        return AddPlayerEvent(the_json['player'])
+        return AddPlayerEvent(the_json['player'], the_json['time'])
 
 
 class KickerGame(object):
 
-    def __init__(self, command_words, players):
+    def __init__(self, command_words, players, create_time):
         self.command_words = command_words
+        self.create_time = create_time
 
         if command_words[2] == u'beat':
             self.score_a = 2
@@ -162,11 +174,12 @@ class KickerGame(object):
 
 class AddGameEvent(object):
 
-    def __init__(self, command_words):
+    def __init__(self, command_words, create_time):
         self.command_words = command_words
+        self.create_time = create_time
 
     def process(self, players, games):
-        game = KickerGame(self.command_words, players)
+        game = KickerGame(self.command_words, players, self.create_time)
         games.append(game)
         return 'added: ' + str(game)
 
@@ -174,12 +187,13 @@ class AddGameEvent(object):
         ret = {}
         ret['type'] = 'AddGameEvent'
         ret['command'] = " ".join(self.command_words)
+        ret['time'] = self.create_time
         return ret
 
     @staticmethod
     def from_json(the_json):
         assert the_json['type'] == 'AddGameEvent'
-        return AddGameEvent(the_json['command'].split())
+        return AddGameEvent(the_json['command'].split(), the_json['time'])
 
 if __name__ == '__main__':
     import random
