@@ -42,8 +42,11 @@ class index:
         <button id="button" onclick="kicker()">kickify</button>
         <input type="text" id="KICKER_INPUT">
         <div id="KICKER_OUTPUT">
-        Here goes the output, try add [player], game [a b] {beat,lost,draw} [c d], next [names], whowins [names]
-        WARNING next command is SLOW
+        Here goes the output, commands:<br>
+        add [player]<br>
+        game [a b] {beat,lost,draw} [c d]<br>
+        next [names]<br>
+        whowins a b c d<br>
         </div>
         """
 

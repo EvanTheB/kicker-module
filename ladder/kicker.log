@@ -231,11 +231,6 @@
             "type": "AddGameEvent"
         },
         {
-            "player": "paul",
-            "time": 1431956026.0,
-            "type": "AddPlayerEvent"
-        },
-        {
             "command": "nick adam beat evan keith",
             "time": 1431956026.0,
             "type": "AddGameEvent"
@@ -436,11 +431,6 @@
             "type": "AddGameEvent"
         },
         {
-            "player": "carlos",
-            "time": 1431956026.0,
-            "type": "AddPlayerEvent"
-        },
-        {
             "command": "evan chris beat william adam",
             "time": 1431956026.0,
             "type": "AddGameEvent"
@@ -492,14 +482,102 @@
         },
         {
             "command": "tim nick beat evan chris",
+            "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
             "command": "rowan jiaquan draw yen tet",
+            "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
             "command": "adam celine draw chris tim",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat andy keith",
+            "time": 1432872245.431665,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy adam beat tim evan",
+            "time": 1432885231.415063,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan adam beat nick chris",
+            "time": 1432885256.135356,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan andy beat chris nick",
+            "time": 1433140643.484986,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "andy keith beat rowan nick",
+            "time": 1433215637.893009,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan tim beat chris adam",
+            "time": 1433218477.360543,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan celine beat adam keith",
+            "time": 1433313533.285302,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan adam draw chris tim",
+            "time": 1433397930.65614,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan adam beat tet jiaquan",
+            "time": 1433401089.751711,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "christian",
+            "time": 1433477780.815503,
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "andy christian draw mark nick",
+            "time": 1433477798.908119,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan nick beat keith rowan",
+            "time": 1433488211.225827,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "rowan yen beat tet jiaquan",
+            "time": 1433488610.701857,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "tim christian beat adam celine",
+            "time": 1433489735.297374,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "carlos",
+            "time": 1433491140.710298,
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "rowan adam beat carlos tim",
+            "time": 1433491157.415383,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "evan chris draw adam rowan",
+            "time": 1433493657.179347,
             "type": "AddGameEvent"
         }
     ]

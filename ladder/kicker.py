@@ -48,7 +48,8 @@ class HeuristicManager(object):
                         "sigma",
                         "time",
                         "variety",
-                        "default"
+                        "default",
+                        "slow",
                         ]
 
     def get_heuristic(self, ladder, players, games, command):
@@ -91,16 +92,21 @@ class HeuristicManager(object):
             return variety
 
         lin_heur = [
-            (20., close_game),
-            (5., disrupt),
-            (10., class_warfare),
-            (2.5, sigma),
-            (5., playmore),
-            (5., variety),
+            (1., close_game),
+            (1., class_warfare),
         ]
         default = heuristics.LinearSumHeuristic(lin_heur)
         if command == "default":
             return default
+
+        slow_lin_heur = [
+            (1., close_game),
+            (1., class_warfare),
+            (2., disrupt),
+        ]
+        slow = heuristics.LinearSumHeuristic(slow_lin_heur)
+        if command == "slow":
+            return slow
 
 
 class KickerManager(object):
@@ -220,7 +226,7 @@ class KickerManager(object):
         ladder.process(players, games)
 
         return [
-            "w:{0[0]:.2} d:{0[1]:.2} l:{0[2]:.2}".format(
+            "w:{0[0]:0.2f} d:{0[1]:0.2f} l:{0[2]:0.2f}".format(
                 ladder.chances(command.team_a, command.team_b)
             )
         ]

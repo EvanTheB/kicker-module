@@ -18,9 +18,11 @@ def kicker_command(bot, trigger):
         history
     """
     text = trigger.group().split()[1:]
+    print text
     ret = bot.memory['kicker_manager'].kicker_command(text)
     for l in ret:
         bot.say(l)
+
 
 def setup(bot):
     bot.memory['kicker_manager'] = ladder.kicker.KickerManager()

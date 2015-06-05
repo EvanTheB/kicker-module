@@ -40,7 +40,7 @@ def graph_ranks(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
-    pylab.savefig('graph_ranks.png')
+    pylab.savefig('graph_ranks.svg')
     plt.show()
 
 
@@ -58,7 +58,7 @@ def graph_level(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
-    pylab.savefig('graph_level.png')
+    pylab.savefig('graph_level.svg')
     plt.show()
 
 
@@ -79,7 +79,7 @@ def graph_skill(p, g, ladder):
 
     for y in data_to_yarr(graph_data):
         plt.plot(y)
-    pylab.savefig('graph_skill.png')
+    pylab.savefig('graph_skill.svg')
     plt.show()
 
 
@@ -120,7 +120,7 @@ def graph_skill_error(p, g, ladder):
         plt.plot(range(len(y)), y, COLOURS[i] +'-', label = names[i])
         plt.plot(y)
     plt.legend(loc=3, ncol=len(names)/2)
-    pylab.savefig('graph_error.png')
+    pylab.savefig('graph_error.svg')
     plt.show()
 
 
