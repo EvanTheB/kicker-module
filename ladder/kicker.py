@@ -103,6 +103,7 @@ class HeuristicManager(object):
             (1., close_game),
             (1., class_warfare),
             (2., disrupt),
+            (1., sigma),
         ]
         slow = heuristics.LinearSumHeuristic(slow_lin_heur)
         if command == "slow":
