@@ -76,5 +76,5 @@ if __name__ == '__main__':
     all_games = kicker_backend.all_games(players, lambda x: True)
     print bracket_hard(players, sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True))
 
-    all_games = kicker_backend.all_games(players, lambda x: True)
+        all_games = kicker_backend.all_games(players, lambda x: True)
     print bracket_greedy(players, sorted(draws.rate_all(all_games), key=lambda x: x[0]))
