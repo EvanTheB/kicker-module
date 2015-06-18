@@ -6,7 +6,7 @@ def bracket_greedy(players, potentials):
     games = []
     while len(left) >= 4 and len(potentials) > 0:
         next_potential = potentials.pop()
-        if len([p for t in next_potential[1] for p in t if p in chosen]) > 0:
+        if len([p for t in next_potential[1] for p in t if p not in left]) > 0:
             continue
         for p in [p for t in next_potential[1] for p in t]:
             chosen.append(p)
@@ -74,7 +74,8 @@ if __name__ == '__main__':
 
 
     all_games = kicker_backend.all_games(players, lambda x: True)
-    print bracket_hard(players, sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True))
+    g = sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True)
+    del players["william"]
 
-        all_games = kicker_backend.all_games(players, lambda x: True)
-    print bracket_greedy(players, sorted(draws.rate_all(all_games), key=lambda x: x[0]))
+    # print bracket_hard(players, g)
+    print bracket_greedy(players, g)

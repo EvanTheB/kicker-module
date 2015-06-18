@@ -94,6 +94,7 @@ class HeuristicManager(object):
         lin_heur = [
             (1., close_game),
             (1., class_warfare),
+            (0.5, variety),
         ]
         default = heuristics.LinearSumHeuristic(lin_heur)
         if command == "default":
@@ -104,6 +105,7 @@ class HeuristicManager(object):
             (1., class_warfare),
             (2., disrupt),
             (1., sigma),
+            (0.5, variety),
         ]
         slow = heuristics.LinearSumHeuristic(slow_lin_heur)
         if command == "slow":
@@ -273,7 +275,8 @@ class KickerManager(object):
         for g in games:
             ret.append("{}: {}".format(i, g))
             i += 1
-        return ret
+        ret.reverse()
+        return ret[0:5]
 
     def write_index_html(self):
         players, games = self.data.get_players_games()
