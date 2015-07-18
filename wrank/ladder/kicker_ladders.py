@@ -1,4 +1,4 @@
-import trueskill
+from . import trueskill
 
 
 class PlayerWrapper(object):

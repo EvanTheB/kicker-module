@@ -1,6 +1,5 @@
-import trueskill
-import kicker_backend
-import kicker_ladders
+from . import backend
+from .ladder import kicker_ladders
 
 import time
 

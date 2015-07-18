@@ -215,8 +215,7 @@ if __name__ == '__main__':
     import random
     import time
 
-    init_data_file("test.log")
-    k = KickerData("kicker.log")
+    k = KickerData(os.path.join(os.path.dirname(__file__), "..", "kicker.log"))
     # test concurrent log writes
     # thread = str(random.randint(0, 100))
     # print thread

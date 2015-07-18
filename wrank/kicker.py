@@ -4,17 +4,15 @@ ebenn, modified from rss.py
 """
 from __future__ import unicode_literals
 
-
 import argparse
-import itertools
 import os
 import time
 import sys
 
-import kicker_ladders
-import kicker_backend
-import trueskill
-import heuristics
+
+from . import backend
+from . import heuristics
+from .ladder import kicker_ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), 'static', 'part.html')
 
@@ -117,7 +115,7 @@ class KickerManager(object):
     """
 
     def __init__(self, log_file):
-        self.data = kicker_backend.KickerData(log_file)
+        self.data = backend.KickerData(log_file)
 
     def kicker_command(self, command):
         class KickerArgumentParser(argparse.ArgumentParser):
@@ -206,7 +204,7 @@ class KickerManager(object):
         pre_ladder = kicker_ladders.TrueSkillLadder()
         pre_data = pre_ladder.process(all_players, all_games)
 
-        games = kicker_backend.all_games(players, game_filter)
+        games = backend.all_games(players, game_filter)
 
         heur = HeuristicManager().get_heuristic(ladder, all_players, all_games, command.heuristic)
         ratings = sorted(heur.rate_all(games), key=lambda x: x[0], reverse=True)
@@ -318,30 +316,4 @@ class KickerManager(object):
 
         return output
 
-if __name__ == '__main__':
-    k = KickerManager(os.path.join(os.path.dirname(__file__), "kicker.log"))
-    if len(sys.argv) > 1:
-        "\n".join(k.kicker_command(sys.argv[1:]))
-    else:
-        # print "\n".join(k.kicker_command(["ladder", "basic"]))
-        # print "\n".join(k.kicker_command(["ladder", "scaled"]))
-        # print "\n".join(k.kicker_command(["ladder", "ELO"]))
-        # print "\n".join(k.kicker_command(["ladder"]))
 
-        # print "\n".join(k.kicker_command(["history"]))
-
-        # print "\n".join(k.kicker_command(["whowins", "nick", "chris", "evan",
-        # "andy"]))
-
-        print "\n".join(k.kicker_command(["next", "--heuristic", "class_warfare", "celine", "evan", "chris", "william", "nick"]))
-        print "\n".join(k.kicker_command(["next", "celine", "evan", "chris"]))
-        print "\n".join(k.kicker_command(["next", "--heuristic", "close_game", "evan"]))
-        # print "\n".join(k.kicker_command(["next"]))
-
-        # print "\n".join(k.kicker_command(["add", "newplayer"]))
-        # print "\n".join(k.kicker_command(["game", "newplayer", "newplayer",
-        # "beat", "newplayer", "newplayer"]))
-
-        print k.write_index_html()
-        print "\n".join(k.kicker_command(["wrong"]))
-        print "\n".join(k.kicker_command(["next", "-h"]))
