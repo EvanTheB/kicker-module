@@ -5,7 +5,7 @@ import fcntl
 import itertools
 import time
 
-LOG_FILE = os.path.join(os.path.dirname(__file__), 'kicker.log')
+# without filter there are (N choose 4) * 3 ~ N!
 
 
 def all_games(players, game_filter):
@@ -35,15 +35,31 @@ class LockFile(object):
         return False
 
 
+def init_data_file(filename):
+    to_save = {}
+    to_save['events'] = []
+    with open(filename, 'w') as fd:
+        json.dump(
+            to_save,
+            fd,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': '))
+
+
 class KickerData(object):
 
-    def __init__(self):
+    def __init__(self, log_file):
+        if not os.path.exists(log_file):
+            raise ValueError("log file not found:{}".format(log_file))
+
         self.players = {}
         self.games = []
         self.events = []
+        self.log_file = log_file
 
-    def _load_from_json(self, log_file):
-        json_log = json.load(log_file)
+    def _load_from_json(self, log_fp):
+        json_log = json.load(log_fp)
         self.players = {}
         self.games = []
         self.events = []
@@ -56,14 +72,14 @@ class KickerData(object):
             else:
                 assert False, "failed to load event: " + str(e)
 
-    def _save_to_log(self, log_file):
+    def _save_to_log(self, log_fp):
         to_save = {}
         to_save['events'] = []
         for e in self.events:
             to_save['events'].append(e.to_json())
         json.dump(
             to_save,
-            log_file,
+            log_fp,
             sort_keys=True,
             indent=4,
             separators=(',', ': '))
@@ -74,14 +90,14 @@ class KickerData(object):
         return ret
 
     def get_players_games(self):
-        with open(LOG_FILE, 'r+') as log:
+        with open(self.log_file, 'r+') as log:
             with LockFile(log):
                 self._load_from_json(log)
 
         return copy.deepcopy(dict(self.players)), copy.deepcopy(list(self.games))
 
     def add_player(self, name):
-        with open(LOG_FILE, 'r+') as log:
+        with open(self.log_file, 'r+') as log:
             with LockFile(log):
                 self._load_from_json(log)
                 event = AddPlayerEvent(name, time.time())
@@ -93,7 +109,7 @@ class KickerData(object):
         return ret
 
     def add_game(self, command_words):
-        with open(LOG_FILE, 'r+') as log:
+        with open(self.log_file, 'r+') as log:
             with LockFile(log):
                 self._load_from_json(log)
                 event = AddGameEvent(command_words, time.time())
@@ -199,10 +215,14 @@ if __name__ == '__main__':
     import random
     import time
 
-    k = KickerData()
+    init_data_file("test.log")
+    k = KickerData("kicker.log")
     # test concurrent log writes
-    thread = str(random.randint(0, 100))
-    print thread
-    for x in range(100):
-        time.sleep(0.01)
-        k.add_player(thread + '_' + str(x))
+    # thread = str(random.randint(0, 100))
+    # print thread
+    # for x in range(100):
+    #     time.sleep(0.01)
+    #     k.add_player(thread + '_' + str(x))
+    p, g = k.get_players_games()
+    print len(p)
+    print len(list(all_games(p, lambda x: True)))

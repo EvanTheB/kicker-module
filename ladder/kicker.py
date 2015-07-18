@@ -116,8 +116,8 @@ class KickerManager(object):
     CLI/IRC ladder interaction
     """
 
-    def __init__(self):
-        self.data = kicker_backend.KickerData()
+    def __init__(self, log_file):
+        self.data = kicker_backend.KickerData(log_file)
 
     def kicker_command(self, command):
         class KickerArgumentParser(argparse.ArgumentParser):
@@ -319,7 +319,7 @@ class KickerManager(object):
         return output
 
 if __name__ == '__main__':
-    k = KickerManager()
+    k = KickerManager(os.path.join(os.path.dirname(__file__), "kicker.log"))
     if len(sys.argv) > 1:
         "\n".join(k.kicker_command(sys.argv[1:]))
     else:

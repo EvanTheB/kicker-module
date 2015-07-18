@@ -3,9 +3,8 @@ import os
 sys.path.append(os.path.dirname(__file__))
 import ladder
 
-from willie.module import commands, interval
-from willie.config import ConfigurationError
-from willie.logger import get_logger
+from willie.module import commands
+
 
 @commands('kicker')
 def kicker_command(bot, trigger):
@@ -25,7 +24,8 @@ def kicker_command(bot, trigger):
 
 
 def setup(bot):
-    bot.memory['kicker_manager'] = ladder.kicker.KickerManager()
+    bot.memory['kicker_manager'] = ladder.kicker.KickerManager(
+        "ladder/kicker.log")
 
 if __name__ == '__main__':
     print 'yep'

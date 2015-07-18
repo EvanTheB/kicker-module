@@ -74,6 +74,6 @@ if __name__ == "__main__":
         '/', 'index',
         '/kicker', 'KickerController'
     )
-    k = kicker.KickerManager()
+    k = kicker.KickerManager(os.path.join(os.path.dirname(__file__), "kicker.log"))
     app = web.application(urls, globals())
     app.run()
