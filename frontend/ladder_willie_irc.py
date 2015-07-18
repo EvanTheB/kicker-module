@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))
-import ladder
+import wrank
 
 from willie.module import commands
 
@@ -17,15 +17,10 @@ def kicker_command(bot, trigger):
         history
     """
     text = trigger.group().split()[1:]
-    print text
-    ret = bot.memory['kicker_manager'].kicker_command(text)
+    ret = bot.memory['kicker_manager'].ladder_command(text)
     for l in ret:
         bot.say(l)
 
 
 def setup(bot):
-    bot.memory['kicker_manager'] = ladder.kicker.KickerManager(
-        "ladder/kicker.log")
-
-if __name__ == '__main__':
-    print 'yep'
+    bot.memory['kicker_manager'] = wrank.LadderManager("kicker.log")

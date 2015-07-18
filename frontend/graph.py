@@ -1,11 +1,9 @@
 import numpy as np
 import pylab
 import matplotlib.pyplot as plt
-import math
 
-
-import kicker_ladders
-import kicker_backend
+import wrank.backend
+import wrank.ladder.ladders
 
 COLOURS = ['b', 'g','r',  'c',  'm','y',  'k',]
 
@@ -126,10 +124,10 @@ def graph_skill_error(p, g, ladder):
 
 
 if __name__ == '__main__':
-    k = kicker_backend.KickerData()
+    k = wrank.backend.LadderData("kicker.log")
     p, g = k.get_players_games()
 
-    ladder = kicker_ladders.TrueSkillLadder()
+    ladder = wrank.ladder.ladders.TrueSkillLadder()
 
     graph_level(p, g, ladder)
     graph_ranks(p, g, ladder)

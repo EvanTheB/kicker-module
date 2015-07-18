@@ -4,7 +4,7 @@ from . import trueskill
 class PlayerWrapper(object):
 
     """
-    using this to wrap a KickerPlayer
+    using this to wrap a LadderPlayer
     so I can munge in values like score
     """
 

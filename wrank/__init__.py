@@ -1,1 +1,1 @@
-from .kicker import KickerManager
+from .wrank import LadderManager

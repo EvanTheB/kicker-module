@@ -56,25 +56,25 @@ def bracket_hard(players, potentials):
 
 
 if __name__ == '__main__':
-    import kicker
-    import kicker_backend
-    import kicker_ladders
-    import heuristics
+    import wrank
+    from wrank.wrank import HeuristicManager
+    from wrank import backend
+    from wrank.ladder import ladders
 
-    k = kicker.KickerManager()
+    k = wrank.LadderManager()
 
-    data = kicker_backend.KickerData()
+    data = backend.LadderData()
     players, games = data.get_players_games()
 
-    pre_ladder = kicker_ladders.TrueSkillLadder()
+    pre_ladder = ladders.TrueSkillLadder()
     pre_data = pre_ladder.process(players, games)
 
-    draws = kicker.HeuristicManager().get_heuristic(
+    draws = HeuristicManager().get_heuristic(
         pre_ladder, players, games, "slow")
 
 
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     print bracket_hard(players, sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True))
 
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     print bracket_greedy(players, sorted(draws.rate_all(all_games), key=lambda x: x[0]))

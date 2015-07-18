@@ -7,12 +7,10 @@ from __future__ import unicode_literals
 import argparse
 import os
 import time
-import sys
-
 
 from . import backend
 from . import heuristics
-from .ladder import kicker_ladders
+from .ladder import ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), 'static', 'part.html')
 
@@ -108,25 +106,25 @@ class HeuristicManager(object):
             return slow
 
 
-class KickerManager(object):
+class LadderManager(object):
 
     """
     CLI/IRC ladder interaction
     """
 
     def __init__(self, log_file):
-        self.data = backend.KickerData(log_file)
+        self.data = backend.LadderData(log_file)
 
-    def kicker_command(self, command):
-        class KickerArgumentParser(argparse.ArgumentParser):
-
-            def error(self, message):
-                raise KickerArgError(self.format_usage())
-
-        class KickerArgError(Exception):
+    def ladder_command(self, command):
+        class LadderArgError(Exception):
             pass
 
-        parser = KickerArgumentParser(prog=".kicker", add_help=False)
+        class LadderArgumentParser(argparse.ArgumentParser):
+
+            def error(self, message):
+                raise LadderArgError(self.format_usage())
+
+        parser = LadderArgumentParser(prog=".wrank", add_help=False)
         subcommands = parser.add_subparsers()
         parser.add_argument("-h", action="store_true")
 
@@ -170,12 +168,12 @@ class KickerManager(object):
         try:
             args = parser.parse_args(command)
             return args.func(args)
-        except KickerArgError as e:
+        except LadderArgError as e:
             return str(e).split('\n')
 
     def _best_matches(self, command):
         all_players, all_games = self.data.get_players_games()
-        ladder = kicker_ladders.TrueSkillLadder()
+        ladder = ladders.TrueSkillLadder()
         ladder.process(all_players, all_games)
 
         # set up players and game_filter such that
@@ -201,7 +199,7 @@ class KickerManager(object):
             players = all_players
 
         all_potential_games = []
-        pre_ladder = kicker_ladders.TrueSkillLadder()
+        pre_ladder = ladders.TrueSkillLadder()
         pre_data = pre_ladder.process(all_players, all_games)
 
         games = backend.all_games(players, game_filter)
@@ -221,7 +219,7 @@ class KickerManager(object):
 
     def _expected_outcome(self, command):
         players, games = self.data.get_players_games()
-        ladder = kicker_ladders.TrueSkillLadder()
+        ladder = ladders.TrueSkillLadder()
         ladder.process(players, games)
 
         return [
@@ -253,13 +251,13 @@ class KickerManager(object):
                 except ValueError:
                     return "Wanted a number. got {}".format(
                         command.options[0])
-            ladder = kicker_ladders.ELOLadder(K=elo_k)
+            ladder = ladders.ELOLadder(K=elo_k)
         elif command.type == 'basic':
-            ladder = kicker_ladders.BasicLadder()
+            ladder = ladders.BasicLadder()
         elif command.type == 'scaled':
-            ladder = kicker_ladders.BasicScaledLadder()
+            ladder = ladders.BasicScaledLadder()
         elif command.type == 'trueskill':
-            ladder = kicker_ladders.TrueSkillLadder()
+            ladder = ladders.TrueSkillLadder()
 
         data = ladder.process(players, games)
         return pretty_print_2d(data)
@@ -275,7 +273,7 @@ class KickerManager(object):
 
     def write_index_html(self):
         players, games = self.data.get_players_games()
-        data_tuples = kicker_ladders.TrueSkillLadder().process(
+        data_tuples = ladders.TrueSkillLadder().process(
             players, games)
         output = ""
         output += "Trueskill ladder ranked on mu - 3*sigma (P(skill>level)~0.99)<br>\n"
@@ -297,20 +295,6 @@ class KickerManager(object):
             output += "{}: {}<br>".format(i, g)
             i += 1
 
-        full_output = """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                <title>Sweet Kicker Ladder</title>
-                </head>
-
-                <body>
-                <marquee>WELCOME TO LADDER</marquee>
-                {body}
-                </body>
-
-                </html>
-                """.format(body=output)
         with open(PART_HTML, 'w') as web_page:
             web_page.write(output)
 

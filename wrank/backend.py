@@ -47,7 +47,7 @@ def init_data_file(filename):
             separators=(',', ': '))
 
 
-class KickerData(object):
+class LadderData(object):
 
     def __init__(self, log_file):
         if not os.path.exists(log_file):
@@ -121,7 +121,7 @@ class KickerData(object):
         return ret
 
 
-class KickerPlayer(object):
+class LadderPlayer(object):
 
     def __init__(self, name, create_time):
         assert name == str(name)
@@ -142,7 +142,7 @@ class AddPlayerEvent(object):
 
     def process(self, players, games):
         assert self.name not in players
-        players[self.name] = KickerPlayer(self.name, self.create_time)
+        players[self.name] = LadderPlayer(self.name, self.create_time)
         return 'added: ' + str(players[self.name])
 
     def to_json(self):
@@ -158,7 +158,7 @@ class AddPlayerEvent(object):
         return AddPlayerEvent(the_json['player'], the_json['time'])
 
 
-class KickerGame(object):
+class LadderGame(object):
 
     def __init__(self, command_words, players, create_time):
         self.command_words = command_words
@@ -195,7 +195,7 @@ class AddGameEvent(object):
         self.create_time = create_time
 
     def process(self, players, games):
-        game = KickerGame(self.command_words, players, self.create_time)
+        game = LadderGame(self.command_words, players, self.create_time)
         games.append(game)
         return 'added: ' + str(game)
 
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     import random
     import time
 
-    k = KickerData(os.path.join(os.path.dirname(__file__), "..", "kicker.log"))
+    k = LadderData(os.path.join(os.path.dirname(__file__), "..", "kicker.log"))
     # test concurrent log writes
     # thread = str(random.randint(0, 100))
     # print thread

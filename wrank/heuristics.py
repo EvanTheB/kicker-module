@@ -1,5 +1,5 @@
 from . import backend
-from .ladder import kicker_ladders
+from .ladder import ladders
 
 import time
 
@@ -53,7 +53,7 @@ class LadderDisruptionHeuristic(Heuristic):
         result_prob = self.ladder.chances(team_a, team_b)
         match_worth = 0.
         for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
-            game = kicker_backend.KickerGame(
+            game = backend.LadderGame(
                 team_a + (outcome,) + team_b,
                 self.players, 0)
 
@@ -102,7 +102,7 @@ class SigmaReductionHeuristic(Heuristic):
         result_prob = self.ladder.chances(team_a, team_b)
         match_worth = 0.
         for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
-            game = kicker_backend.KickerGame(
+            game = backend.LadderGame(
                 team_a + (outcome,) + team_b,
                 self.players, 0)
 
@@ -230,44 +230,45 @@ def linear_clamped_function(x0, y0, x1, y1):
 
 def main():
     import math
-    data = kicker_backend.KickerData()
+    import os
+    data = backend.LadderData(os.path.join(os.path.dirname(__file__), "..", "kicker.log"))
     players, games = data.get_players_games()
 
-    pre_ladder = kicker_ladders.TrueSkillLadder()
+    pre_ladder = ladders.TrueSkillLadder()
     pre_data = pre_ladder.process(players, games)
 
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     draws = DrawChanceHeuristic(pre_ladder)
     # print "\n".join([str(x) for x in sorted(draws.rate_all(all_games),
     # key=lambda x: x[0])])
 
     linear_10 = linear_clamped_function(0., 0., 10., 1.)
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     disrup = LadderDisruptionHeuristic(pre_ladder, players, games, linear_10)
     # print "\n".join([str(x) for x in sorted(disrup.rate_all(all_games),
     # key=lambda x: x[0])])
 
     linear_3_10 = linear_clamped_function(3. * 4., 1., 10. * 4., 0.)
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     clump = TrueskillClumpingHeuristic(pre_data, linear_3_10)
     # print "\n".join([str(x) for x in sorted(clump.rate_all(all_games),
     # key=lambda x: x[0])])
 
     linear_0_1 = linear_clamped_function(0., 0., 1.0, 1.)
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     sigmars = SigmaReductionHeuristic(pre_ladder, players, games, linear_0_1)
     # print "\n".join([str(x) for x in sorted(sigmars.rate_all(all_games),
     # key=lambda x: x[0])])
 
     linear_week_month = linear_clamped_function(
         time.time() - 7. * 24. * 60. * 60., 0., time.time() - 30. * 24. * 60. * 60., 1.)
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     timesince = TimeSinceLastPlayedHeuristic(players, games, linear_week_month)
     # print "\n".join([str(x) for x in sorted(timesince.rate_all(all_games),
     # key=lambda x: x[0])])
 
     linear_0_30 = linear_clamped_function(0., 1., 30., 0.)
-    all_games = kicker_backend.all_games(players, lambda x: True)
+    all_games = backend.all_games(players, lambda x: True)
     unplayed = UnplayedMatchupsHeuristic(players, games, linear_0_30)
     # print "\n".join([str(x) for x in sorted(unplayed.rate_all(all_games),
     # key=lambda x: x[0])])
