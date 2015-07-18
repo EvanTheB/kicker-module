@@ -1,3 +1,10 @@
+"""
+Attempt to choose the best set of floor(N/4) games for N
+players, max one game per player, to maximise some measure of
+quality.
+It should go in the other file but it is hacky and
+likely too slow O(M) for M games (~N^N)?
+"""
 
 def bracket_greedy(players, potentials):
     # O(N) (already sorted so pff)

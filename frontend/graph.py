@@ -1,3 +1,9 @@
+"""
+Plots a few svg graphs of interesting stats.
+The colours and labels are stuffed, havent figured out why.
+Might be the alpha blending.
+"""
+
 import numpy as np
 import pylab
 import matplotlib.pyplot as plt

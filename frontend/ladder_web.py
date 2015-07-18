@@ -1,3 +1,9 @@
+"""
+Web interface to the wrank commands.
+Still statically configured.
+Currently broken i think since rearrange of files.
+"""
+
 import web
 import os
 import json

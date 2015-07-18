@@ -1,3 +1,8 @@
+"""
+willie IRC frontend for wrank.
+Load this file in the willie modules directory.
+"""
+
 import sys
 import os
 sys.path.append(os.path.dirname(__file__))

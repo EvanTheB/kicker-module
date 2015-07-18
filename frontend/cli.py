@@ -1,3 +1,7 @@
+"""
+Command line wrapper for wrank. This should be __main__
+"""
+
 import wrank
 
 import sys
