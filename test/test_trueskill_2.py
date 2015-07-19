@@ -1,6 +1,6 @@
-import trueskill
-import kicker_backend
-import kicker_ladders
+import wrank.ladder.trueskill as trueskill
+import wrank.backend
+import wrank.ladder.ladders
 
 import random
 
@@ -26,7 +26,7 @@ def pretty_print_2d(data_2d):
 players = {}
 for i in range(4):
     skill = float(i)
-    p = kicker_backend.KickerPlayer(str(skill))
+    p = wrank.backend.LadderPlayer(str(skill), 1)
     p.trueskill = skill
     p.mu = 25.
     p.sigma = 8.333
@@ -36,11 +36,10 @@ games = []
 teams = players.values()[0:4]
 
 for i in range(50):
-    games.append(kicker_backend.KickerGame("{} {} {} {} {}".format(
-        teams[0].name, teams[1].name, 'lost', teams[2].name, teams[3].name).split(), players))
+    games.append(wrank.backend.LadderGame("{} {} {} {} {}".format(
+        teams[0].name, teams[1].name, 'lost', teams[2].name, teams[3].name).split(), players, 1))
 
-ladder = kicker_ladders.TrueSkillLadder()
-kicker_backend.cross_reference(players, games)
+ladder = wrank.ladder.ladders.TrueSkillLadder()
 data = ladder.process(players, games)
 for l in pretty_print_2d(data):
     print l

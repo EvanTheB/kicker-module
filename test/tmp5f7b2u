@@ -1,6 +1,6 @@
-import trueskill
-import kicker_backend
-import kicker_ladders
+import wrank.ladder.trueskill as trueskill
+import wrank.backend 
+import wrank.ladder.ladders
 
 import random
 import itertools
@@ -27,7 +27,7 @@ def pretty_print_2d(data_2d):
 players = {}
 for i in range(10):
     skill = float(i*2. + 15.)
-    p = kicker_backend.KickerPlayer(str(skill))
+    p = wrank.backend.KickerPlayer(str(skill))
     p.trueskill = skill
     p.mu = skill
     p.sigma = 8.333
@@ -63,7 +63,7 @@ for i in range(100):
         else:
             assert rand_val - win - draw < loss
             result = 'lost'
-    games.append(kicker_backend.KickerGame("{} {} {} {} {}".format(
+    games.append(wrank.backend.KickerGame("{} {} {} {} {}".format(
         teams[0].name, teams[1].name, result, teams[2].name, teams[3].name).split(), players))
     print games[-1]
     print win, draw, loss

@@ -68,9 +68,9 @@ if __name__ == '__main__':
     from wrank import backend
     from wrank.ladder import ladders
 
-    k = wrank.LadderManager()
+    k = wrank.LadderManager("kicker.log")
 
-    data = backend.LadderData()
+    data = backend.LadderData("kicker.log")
     players, games = data.get_players_games()
 
     pre_ladder = ladders.TrueSkillLadder()
@@ -80,8 +80,8 @@ if __name__ == '__main__':
         pre_ladder, players, games, "slow")
 
 
-    all_games = backend.all_games(players, lambda x: True)
-    print bracket_hard(players, sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True))
+    # all_games = backend.all_games(players, lambda x: True)
+    # print bracket_hard(players, sorted(draws.rate_all(all_games), key=lambda x: x[0], reverse=True))
 
     all_games = backend.all_games(players, lambda x: True)
     print bracket_greedy(players, sorted(draws.rate_all(all_games), key=lambda x: x[0]))
