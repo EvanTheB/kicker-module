@@ -6,8 +6,6 @@ import itertools
 import time
 
 # without filter there are (N choose 4) * 3 ~ N!
-
-
 def all_games(players, game_filter):
     seen_games = set()
     for team_a in itertools.combinations(players.keys(), 2):
@@ -211,17 +209,49 @@ class AddGameEvent(object):
         assert the_json['type'] == 'AddGameEvent'
         return AddGameEvent(the_json['command'].split(), the_json['time'])
 
-if __name__ == '__main__':
+def test():
+    import random
+    print "players, games, num-possible-games"
+    print "num-possible-games == N choose 4 * 3"
+    init_data_file("tmp_test.log")
+    k = LadderData("tmp_test.log")
+
+    for x in range(10):
+        k.add_player(str(x))
+    p, g = k.get_players_games()
+    print len(p), len(g)
+    print len(list(all_games(p, lambda x: True)))
+
+    for x in range(5):
+        players = random.sample(p.keys(), 4)
+        k.add_game(players[0:2] + ['beat'] + players[3:])
+        k.add_game(players[0:2] + ['lost'] + players[3:])
+        k.add_game(players[0:2] + ['draw'] + players[3:])
+    k.add_player("one_more")
+    p, g = k.get_players_games()
+    print len(p), len(g)
+    print len(list(all_games(p, lambda x: True)))
+
+def test_concurrent():
+    # run this in multiple processes,
+    # the idea is that collisions will crash, but not munge data
     import random
     import time
+    if not os.path.exists("tmp_test_con.log"):
+        init_data_file("tmp_test_con.log")
 
-    k = LadderData(os.path.join(os.path.dirname(__file__), "..", "kicker.log"))
+    k = LadderData("tmp_test_con.log")
     # test concurrent log writes
-    # thread = str(random.randint(0, 100))
-    # print thread
-    # for x in range(100):
-    #     time.sleep(0.01)
-    #     k.add_player(thread + '_' + str(x))
+    thread = str(random.randint(0, 100))
+    print thread
+    for x in range(100):
+        time.sleep(0.01)
+        k.add_player(thread + '_' + str(x))
+
     p, g = k.get_players_games()
     print len(p)
-    print len(list(all_games(p, lambda x: True)))
+
+if __name__ == '__main__':
+    # test_concurrent()
+    test()
+
