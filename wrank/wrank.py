@@ -12,7 +12,7 @@ from . import backend
 from . import heuristics
 from .ladder import ladders
 
-PART_HTML = os.path.join(os.path.dirname(__file__), 'static', 'part.html')
+PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 
 
 def pretty_print_2d(data_2d):
@@ -300,4 +300,30 @@ class LadderManager(object):
 
         return output
 
+def test():
+    k = LadderManager("tmp_test.log")
+    print "\n".join(k.ladder_command(["ladder", "basic"]))
+    print "\n".join(k.ladder_command(["ladder", "scaled"]))
+    print "\n".join(k.ladder_command(["ladder", "ELO"]))
+    print "\n".join(k.ladder_command(["ladder"]))
 
+    print "\n".join(k.ladder_command(["history"]))
+
+    print "\n".join(k.ladder_command(["whowins", "0", "1", "2",
+                                      "3"]))
+
+    print "\n".join(k.ladder_command(["next", "--heuristic", "class_warfare", "0", "1", "2", "3", "4"]))
+    print "\n".join(k.ladder_command(["next", "1", "0", "2"]))
+    print "\n".join(k.ladder_command(["next", "--heuristic", "close_game", "3"]))
+    print "\n".join(k.ladder_command(["next"]))
+
+    print "\n".join(k.ladder_command(["add", "newplayer"]))
+    print "\n".join(k.ladder_command(["game", "newplayer", "newplayer",
+    "beat", "newplayer", "newplayer"]))
+
+    # print k.write_index_html()
+    # print "\n".join(k.ladder_command(["next", "-h"]))
+    # print "\n".join(k.ladder_command(["wrong"]))
+
+if __name__ == '__main__':
+    test()

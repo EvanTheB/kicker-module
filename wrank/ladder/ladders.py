@@ -1,6 +1,5 @@
 from . import trueskill
 
-
 class PlayerWrapper(object):
 
     """
@@ -225,3 +224,30 @@ class TrueSkillLadder(object):
                 "{:.3}".format(ladder[i].sigma),
             ))
         return ret
+
+def test():
+    from .. import backend
+    data = backend.LadderData("tmp_test.log")
+    players, games = data.get_players_games()
+
+    l = BasicLadder()
+    ret = l.process(players, games)
+    # print ret
+
+    l = BasicScaledLadder()
+    ret = l.process(players, games)
+    # print ret
+
+    l = ELOLadder()
+    ret = l.process(players, games)
+    # print ret
+
+    l = TrueSkillLadder()
+    ret = l.process(players, games)
+    # print ret
+    # print l.chances(players.keys()[0:2], players.keys()[2:4])
+    # print l.quality(players.keys()[0:2], players.keys()[2:4])
+
+
+if __name__ == '__main__':
+    test()
