@@ -1,16 +1,23 @@
-# kicker-module
-willie module for a kicker ladder with ELO rankings n stuff.
+# wrank
+A ranking system for games.
+python setup.py develop
 
-Data is tracked in a file kicker.log, which is backed up to kicker.log_bak on read but still occasionally corrupted when I am dumb. 
-Current fixing of bad data should be done by editing the log file directly. 
+Originally a ladder for kicker controlled by IRC, now cli and web frontends also.
+Currently only supports 2v2 games, goal is to make it more general.
 
-use with .kicker -h
-A few different ladders running right now, ELO, basic(win/loss), trueskill.
+Data is tracked in a file kicker.log, this should be provided on command line in future. Fixing of bad data should be done by editing the log file directly, it should be straightforward.
+
+# Frontends
+IRC via willie
+web via web.py
+cli via __main__.py (python wrank -m)
+svg graphs via numpy
+
+You will likely need to edit the frontends to make them work, they assume you are me.
+
+# Ladders
+A few different ladders created, ELO, basic(win/loss), win/loss scaled by number of games, trueskill. Trueskill is the most interesting and default. Trueskill code was adapted from Jeff Mosers article and c# code https://github.com/moserware/Skills.
 
 To Come:
-I would like to add ladder movements to the display
-graphing comparisons of the various ladders and how they differ in their estimates.
 Configurable for different types of games
-Fix data from IRC interface
-Web interface
-
+Proper setup.py and frontends that work off the shelf.
