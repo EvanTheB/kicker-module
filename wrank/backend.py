@@ -6,17 +6,30 @@ import itertools
 import time
 
 # without filter there are (N choose 4) * 3 ~ N!
+
+
 def all_games(players, game_filter):
     seen_games = set()
-    for team_a in itertools.combinations(players.keys(), 2):
-        for team_b in itertools.combinations(players.keys(), 2):
-            if team_a + team_b in seen_games \
-                    or team_b + team_a in seen_games \
-                    or len([True for p in team_b if p in team_a]) > 0:
-                continue
-            seen_games.add(team_a + team_b)
-            if game_filter(team_a + team_b):
-                yield team_a, team_b
+    for team_a_b in itertools.combinations(players.keys(), 4):
+        seen_games.add(team_a_b)
+        if game_filter((team_a_b[0], team_a_b[1], team_a_b[2], team_a_b[3])):
+            yield (team_a_b[0], team_a_b[1]), (team_a_b[2], team_a_b[3])
+        if game_filter((team_a_b[2], team_a_b[1], team_a_b[0], team_a_b[3])):
+            yield (team_a_b[2], team_a_b[1]), (team_a_b[0], team_a_b[3])
+        if game_filter((team_a_b[3], team_a_b[1], team_a_b[2], team_a_b[0])):
+            yield (team_a_b[3], team_a_b[1]), (team_a_b[2], team_a_b[0])
+    # this is more general
+    # but slower ((N choose 2)**2 vs N choose 4)
+    # (only slower by constant factor )
+    # for team_a in itertools.combinations(players.keys(), 2):
+    #         for team_b in itertools.combinations(players.keys(), 2):
+    #             if team_a + team_b in seen_games \
+    #                     or team_b + team_a in seen_games \
+    #                     or len([True for p in team_b if p in team_a]) > 0:
+    #                 continue
+    #             seen_games.add(team_a + team_b)
+    #             if game_filter(team_a + team_b):
+    #                 yield team_a, team_b
 
 
 class LockFile(object):
@@ -209,6 +222,7 @@ class AddGameEvent(object):
         assert the_json['type'] == 'AddGameEvent'
         return AddGameEvent(the_json['command'].split(), the_json['time'])
 
+
 def test():
     import random
     print "players, games, num-possible-games"
@@ -232,6 +246,7 @@ def test():
     print len(p), len(g)
     print len(list(all_games(p, lambda x: True)))
 
+
 def test_concurrent():
     # run this in multiple processes,
     # the idea is that collisions will crash, but not munge data
@@ -254,4 +269,3 @@ def test_concurrent():
 if __name__ == '__main__':
     # test_concurrent()
     test()
-
