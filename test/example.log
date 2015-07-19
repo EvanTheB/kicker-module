@@ -1,663 +1,583 @@
 {
     "events": [
         {
-            "player": "evan",
+            "player": "abel",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "player": "nick",
+            "player": "betty",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "player": "andy",
+            "player": "charlie",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "player": "william",
+            "player": "dick",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "andy evan draw nick william",
+            "command": "charlie abel draw betty dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick william beat andy evan",
+            "command": "betty dick beat charlie abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "player": "mark",
-            "time": 1431956026.0,
-            "type": "AddPlayerEvent"
-        },
-        {
-            "player": "chris",
+            "player": "edward",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "mark nick beat chris william",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan nick lost william andy",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan william beat nick chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan nick beat chris william",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "tim",
+            "player": "francine",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "evan tim draw andy chris",
+            "command": "edward betty beat francine dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat andy mark",
+            "command": "abel betty lost dick charlie",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "player": "celine",
-            "time": 1431956026.0,
-            "type": "AddPlayerEvent"
-        },
-        {
-            "command": "william chris beat celine tim",
+            "command": "abel dick beat betty francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick chris draw evan william",
+            "command": "abel betty beat francine dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "player": "rowan",
+            "player": "george",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "player": "yen",
+            "command": "abel george draw charlie francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty beat charlie edward",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "henrietta",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "yen rowan beat mark evan",
+            "command": "dick francine beat henrietta george",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william tim draw nick chris",
+            "command": "betty francine draw abel dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "tim rowan beat evan chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "mark celine beat evan chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william tim draw chris nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william evan beat nick tim",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "keith",
+            "player": "iggy",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "nick evan beat keith tim",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "keith evan draw william chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "nick rowan beat william chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "nick mark draw andy evan",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william andy draw mark nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "keith andy draw evan nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "andy evan draw chris william",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "nick keith beat andy mark",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william chris beat evan tim",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "andy celine beat evan nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william mark beat keith tim",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "tim nick beat william chris",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "mark william draw tim nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan andy beat chris nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "adam",
+            "player": "jeorge",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "evan adam draw tim chris",
+            "command": "jeorge iggy beat edward abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy adam beat tim chris",
+            "command": "dick george draw betty francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy chris beat nick tim",
+            "command": "george iggy beat abel francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan william beat chris nick",
+            "command": "edward henrietta beat abel francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick adam beat evan keith",
+            "command": "dick george draw francine betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william nick beat evan celine",
+            "command": "dick abel beat betty george",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "player": "tet",
+            "player": "katherine",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "tim tet beat chris mark",
+            "command": "betty abel beat katherine george",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick william beat andy keith",
+            "command": "katherine abel draw dick francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick draw andy mark",
+            "command": "betty iggy beat dick francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick william beat andy keith",
+            "command": "betty edward draw charlie abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan tim lost william chris",
+            "command": "dick charlie draw edward betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat mark andy",
+            "command": "katherine charlie draw abel betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy chris beat william tim",
+            "command": "charlie abel draw francine dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick rowan beat william keith",
+            "command": "betty katherine beat charlie edward",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "player": "chrismc",
+            "command": "dick francine beat abel george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "charlie henrietta beat abel betty",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "dick edward beat katherine george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "george betty beat dick francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "edward dick draw george betty",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel charlie beat francine betty",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "larry",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "evan chris draw mark tim",
+            "command": "abel larry draw george francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "rowan nick beat evan andy",
+            "command": "charlie larry beat george francine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william chris draw andy adam",
+            "command": "charlie francine beat betty george",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william chris beat tim evan",
+            "command": "abel dick beat francine betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william nick beat evan andy",
+            "command": "betty larry beat abel katherine",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy nick beat evan william",
+            "command": "dick betty beat abel henrietta",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william andy beat nick evan",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "keith andy beat adam evan",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "nick andy draw celine william",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william nick beat keith andy",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william nick beat evan andy",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "james",
+            "player": "mindy",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "player": "jiaquan",
+            "command": "george mindy beat francine edward",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "betty dick beat charlie katherine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty draw charlie edward",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "betty dick beat charlie katherine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel george lost dick francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty beat edward charlie",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "charlie francine beat dick george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "betty iggy beat dick katherine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "ned",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "rowan chrismc beat jiaquan james",
+            "command": "abel francine draw edward george",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william andy beat evan rowan",
+            "command": "iggy betty beat abel charlie",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan andy lost rowan william",
+            "command": "dick francine draw charlie larry",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan tet beat william adam",
+            "command": "dick francine beat george abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william keith beat evan adam",
+            "command": "dick betty beat abel charlie",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan chrismc draw william adam",
+            "command": "charlie betty beat abel dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan adam lost tet william",
+            "command": "dick charlie beat betty abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan keith lost william adam",
+            "command": "katherine charlie beat larry abel",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan william beat mark nick",
+            "command": "betty charlie draw henrietta dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "adam william beat keith nick",
+            "command": "dick betty beat katherine charlie",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat mark william",
+            "command": "dick betty beat abel charlie",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william evan beat nick adam",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan nick draw william adam",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william mark lost nick adam",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "william chris draw evan nick",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan chris beat william adam",
-            "time": 1431956026.0,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "claire",
+            "player": "orange",
             "time": 1431956026.0,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "evan rowan beat claire chris",
+            "player": "penny",
+            "time": 1431956026.0,
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "iggy ned beat penny orange",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy tim draw william evan",
+            "command": "dick charlie beat abel iggy",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "chris andy beat keith tim",
+            "command": "abel charlie lost iggy dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat william adam",
+            "command": "abel mindy beat dick larry",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "nick andy beat william chris",
+            "command": "dick katherine beat abel larry",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy chris beat evan tim",
+            "command": "abel ned draw dick larry",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "william tim beat chris adam",
+            "command": "abel larry lost mindy dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "yen rowan beat jiaquan tet",
+            "command": "abel katherine lost dick larry",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "tim nick beat evan chris",
+            "command": "abel dick beat edward betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "rowan jiaquan draw yen tet",
+            "command": "larry dick beat katherine betty",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "adam celine draw chris tim",
+            "command": "abel betty beat edward dick",
             "time": 1431956026.0,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat andy keith",
+            "command": "dick abel beat betty larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty draw dick larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "dick edward lost betty larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "dick francine draw abel betty",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel francine beat dick larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "player": "qu",
+            "time": 1431956026.0,
+            "type": "AddPlayerEvent"
+        },
+        {
+            "command": "abel iggy beat qu francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "charlie george draw dick abel",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "francine charlie beat katherine george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty beat dick larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "betty charlie beat dick francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "charlie francine beat abel george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "dick george beat francine larry",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "jeorge iggy beat penny mindy",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "george betty beat abel francine",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "iggy penny draw jeorge mindy",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "larry henrietta draw francine george",
+            "time": 1431956026.0,
+            "type": "AddGameEvent"
+        },
+        {
+            "command": "abel betty beat charlie katherine",
             "time": 1432872245.431665,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy adam beat tim evan",
+            "command": "charlie larry beat george abel",
             "time": 1432885231.415063,
             "type": "AddGameEvent"
         },
         {
-            "command": "rowan adam beat nick chris",
+            "command": "iggy larry beat betty francine",
             "time": 1432885256.135356,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan andy beat chris nick",
+            "command": "abel charlie beat francine betty",
             "time": 1433140643.484986,
             "type": "AddGameEvent"
         },
         {
-            "command": "andy keith beat rowan nick",
+            "command": "charlie katherine beat iggy betty",
             "time": 1433215637.893009,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan tim beat chris adam",
+            "command": "abel george beat francine larry",
             "time": 1433218477.360543,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan celine beat adam keith",
+            "command": "abel henrietta beat larry katherine",
             "time": 1433313533.285302,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan adam draw chris tim",
+            "command": "abel larry draw francine george",
             "time": 1433397930.65614,
             "type": "AddGameEvent"
         },
         {
-            "command": "rowan adam beat tet jiaquan",
+            "command": "iggy larry beat mindy penny",
             "time": 1433401089.751711,
             "type": "AddGameEvent"
         },
         {
-            "player": "christian",
+            "player": "francinetian",
             "time": 1433477780.815503,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "andy christian draw mark nick",
+            "command": "charlie francinetian draw edward betty",
             "time": 1433477798.908119,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan nick beat keith rowan",
+            "command": "abel betty beat katherine iggy",
             "time": 1433488211.225827,
             "type": "AddGameEvent"
         },
         {
-            "command": "rowan yen beat tet jiaquan",
+            "command": "iggy jeorge beat mindy penny",
             "time": 1433488610.701857,
             "type": "AddGameEvent"
         },
         {
-            "command": "tim christian beat adam celine",
+            "command": "george francinetian beat larry henrietta",
             "time": 1433489735.297374,
             "type": "AddGameEvent"
         },
         {
-            "player": "carlos",
+            "player": "reg",
             "time": 1433491140.710298,
             "type": "AddPlayerEvent"
         },
         {
-            "command": "rowan adam beat carlos tim",
+            "command": "iggy larry beat reg george",
             "time": 1433491157.415383,
             "type": "AddGameEvent"
         },
         {
-            "command": "evan chris draw adam rowan",
+            "command": "abel francine draw larry iggy",
             "time": 1433493657.179347,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "adam evan beat tim chris",
-            "time": 1433823722.227415,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "christubb",
-            "time": 1433906453.417184,
-            "type": "AddPlayerEvent"
-        },
-        {
-            "command": "chris christubb draw tim adam",
-            "time": 1433906468.390753,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan tim draw tet adam",
-            "time": 1433992122.347517,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "keith andy beat evan tim",
-            "time": 1434083426.241459,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan andy beat yen christian",
-            "time": 1434092696.352876,
-            "type": "AddGameEvent"
-        },
-        {
-            "player": "paul",
-            "time": 1434094103.020318,
-            "type": "AddPlayerEvent"
-        },
-        {
-            "command": "adam rowan beat paul chris",
-            "time": 1434094114.305595,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "adam rowan beat tim chris",
-            "time": 1434095564.502726,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "adam celine beat tim chris",
-            "time": 1434097045.307129,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "tim rowan beat evan chris",
-            "time": 1434098339.586297,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "adam tim draw christubb chris",
-            "time": 1434338892.283075,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan andy draw nick christian",
-            "time": 1434347654.265795,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "chris andy draw evan keith",
-            "time": 1434511480.026499,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "evan rowan beat tet yen",
-            "time": 1434521238.990555,
-            "type": "AddGameEvent"
-        },
-        {
-            "command": "chris nick beat tim evan",
-            "time": 1434597172.149265,
             "type": "AddGameEvent"
         }
     ]
