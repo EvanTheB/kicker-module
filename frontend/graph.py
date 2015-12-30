@@ -130,7 +130,8 @@ def graph_skill_error(p, g, ladder):
 
 
 if __name__ == '__main__':
-    k = wrank.backend.LadderData("kicker.log")
+    import sys
+    k = wrank.backend.LadderData(sys.argv[1])
     p, g = k.get_players_games()
 
     ladder = wrank.ladder.ladders.TrueSkillLadder()
