@@ -10,7 +10,7 @@ import sys
 import json
 import urllib
 
-import wrank
+import wrank.front
 
 HEADER = os.path.join(os.path.dirname(__file__),"..", "static", "header.html")
 FOOTER = os.path.join(os.path.dirname(__file__),"..", "static", "footer.html")
@@ -82,6 +82,6 @@ if __name__ == "__main__":
         '/', 'index',
         '/wrank', 'LadderController'
     )
-    k = wrank.LadderManager(sys.argv[2])
+    k = wrank.front.LadderManager(sys.argv[2])
     app = web.application(urls, globals())
     app.run()
