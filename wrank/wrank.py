@@ -8,9 +8,9 @@ import argparse
 import os
 import time
 
-from . import backend
-from . import heuristics
-from .ladder import ladders
+import backend
+import heuristics
+import ladder.ladders as ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 
@@ -51,57 +51,41 @@ class HeuristicManager(object):
     def get_heuristic(self, ladder, players, games, command):
 
         close_game = heuristics.DrawChanceHeuristic(ladder)
-        if command == "close_game":
-            return close_game
 
         linear_10 = heuristics.linear_clamped_function(0., 0., 10., 1.)
         disrupt = heuristics.LadderDisruptionHeuristic(
             ladder, players, games, linear_10)
-        if command == "disrupt":
-            return disrupt
 
         linear_3_10 = heuristics.linear_clamped_function(
             3. * 4., 1., 10. * 4., 0.)
-        class_warfare = heuristics.TrueskillClumpingHeuristic(
+        close_skills = heuristics.TrueskillClumpingHeuristic(
             ladder.process(players, games), linear_3_10)
-        if command == "class_warfare":
-            return class_warfare
-
-        linear_0_1 = heuristics.linear_clamped_function(0., 0., 1.0, 1.)
-        sigma = heuristics.SigmaReductionHeuristic(
-            ladder, players, games, linear_0_1)
-        if command == "sigma":
-            return sigma
 
         linear_week_month = heuristics.linear_clamped_function(
             time.time() - 7. * 24. * 60. * 60., 0.,
             time.time() - 30. * 24. * 60. * 60., 1.)
         playmore = heuristics.TimeSinceLastPlayedHeuristic(
             players, games, linear_week_month)
-        if command == "playmore":
-            return playmore
 
         linear_0_30 = heuristics.linear_clamped_function(0., 1., 30., 0.)
         variety = heuristics.UnplayedMatchupsHeuristic(
             players, games, linear_0_30)
-        if command == "variety":
-            return variety
 
         lin_heur = [
-            (1., close_game),
-            (1., class_warfare),
+            (1.5, close_game),
+            (1., close_skills),
             (0.5, variety),
         ]
         default = heuristics.LinearSumHeuristic(lin_heur)
-        if command == "default":
+        if command == "fast":
             return default
 
         slow_lin_heur = [
-            (1., close_game),
-            (1., class_warfare),
+            # (1., close_game),
+            (0.5, close_skills),
             (2., disrupt),
-            (1., sigma),
             (0.5, variety),
+            (0.5, playmore),
         ]
         slow = heuristics.LinearSumHeuristic(slow_lin_heur)
         if command == "slow":
@@ -137,6 +121,7 @@ class LadderManager(object):
                             default='trueskill',
                             nargs='?',
                             )
+        ladder.add_argument('-v', '--verbose', action='store_true')
         ladder.add_argument('options', nargs='*')
         ladder.set_defaults(func=self._show_ladder)
 
@@ -152,13 +137,14 @@ class LadderManager(object):
         game.set_defaults(func=self._add_game)
 
         history = subcommands.add_parser('history')
+        history.add_argument('players', type=str, nargs='*')
         history.set_defaults(func=self._show_history)
 
         next_best = subcommands.add_parser('next')
         next_best.add_argument('players', type=str, nargs='*')
-        next_best.add_argument('--heuristic',
+        next_best.add_argument('--heuristic', '-z',
                                type=str,
-                               default='default',
+                               default='fast',
                                choices=HeuristicManager().command)
         next_best.set_defaults(func=self._best_matches)
 
@@ -260,15 +246,34 @@ class LadderManager(object):
             ladder = ladders.BasicScaledLadder()
         elif command.type == 'trueskill':
             ladder = ladders.TrueSkillLadder()
-
         data = ladder.process(players, games)
+        if not command.verbose and command.type == 'trueskill':
+            # title line is 0
+            lines = [0]
+            keep = set(games[-1].team_a + games[-1].team_b)
+            change_index = data[0].index('change')
+            for i,line in enumerate(data):
+                # if one of our 'keepers'
+                if set(line).intersection(keep):
+                    lines.append(i)
+                    lines.append(i+1)
+                    lines.append(i-1)
+                # or the position changed
+                if line[change_index] != '0':
+                    lines.append(i)
+            data = [line for i,line in enumerate(data) if i in lines]
         return pretty_print_2d(data)
 
-    def _show_history(self, _):
+
+    def _show_history(self, command):
         ret = []
         i = 1
         _, games = self.data.get_players_games()
-        for g in games:
+        games = list(enumerate(games))
+        if command.players:
+            for p in command.players:
+                games = [(i,g) for (i,g) in games if p in (g.team_a + g.team_b)]
+        for i,g in games:
             ret.append("{}: {}".format(i, g))
             i += 1
         ret.reverse()
@@ -305,24 +310,24 @@ class LadderManager(object):
 
 def test():
     k = LadderManager("tmp_test.log")
-    print "\n".join(k.ladder_command(["ladder", "basic"]))
-    print "\n".join(k.ladder_command(["ladder", "scaled"]))
-    print "\n".join(k.ladder_command(["ladder", "ELO"]))
+    # print "\n".join(k.ladder_command(["ladder", "basic"]))
+    # print "\n".join(k.ladder_command(["ladder", "scaled"]))
+    # print "\n".join(k.ladder_command(["ladder", "ELO"]))
     print "\n".join(k.ladder_command(["ladder"]))
 
-    print "\n".join(k.ladder_command(["history"]))
+    # print "\n".join(k.ladder_command(["history", "wrowl"]))
 
-    print "\n".join(k.ladder_command(["whowins", "0", "1", "2",
-                                      "3"]))
+    # print "\n".join(k.ladder_command(["whowins", "0", "1", "2",
+    #                                   "3"]))
 
-    print "\n".join(k.ladder_command(["next", "--heuristic", "class_warfare", "0", "1", "2", "3", "4"]))
-    print "\n".join(k.ladder_command(["next", "1", "0", "2"]))
-    print "\n".join(k.ladder_command(["next", "--heuristic", "close_game", "3"]))
-    print "\n".join(k.ladder_command(["next"]))
+    # print "\n".join(k.ladder_command(["next", "--heuristic", "class_warfare", "0", "1", "2", "3", "4"]))
+    # print "\n".join(k.ladder_command(["next", "1", "0", "2"]))
+    # print "\n".join(k.ladder_command(["next", "--heuristic", "close_game", "3"]))
+    # print "\n".join(k.ladder_command(["next"]))
 
-    print "\n".join(k.ladder_command(["add", "newplayer"]))
-    print "\n".join(k.ladder_command(["game", "newplayer", "newplayer",
-    "beat", "newplayer", "newplayer"]))
+    # print "\n".join(k.ladder_command(["add", "newplayer"]))
+    # print "\n".join(k.ladder_command(["game", "newplayer", "newplayer",
+    # "beat", "newplayer", "newplayer"]))
 
     # print k.write_index_html()
     # print "\n".join(k.ladder_command(["next", "-h"]))
