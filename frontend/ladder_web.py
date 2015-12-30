@@ -6,14 +6,15 @@ Currently broken i think since rearrange of files.
 
 import web
 import os
+import sys
 import json
 import urllib
 
 import wrank
 
-HEADER = os.path.join(os.path.dirname(__file__), "static", "header.html")
-FOOTER = os.path.join(os.path.dirname(__file__), "static", "footer.html")
-PART = os.path.join(os.path.dirname(__file__), "static", "part.html")
+HEADER = os.path.join(os.path.dirname(__file__),"..", "static", "header.html")
+FOOTER = os.path.join(os.path.dirname(__file__),"..", "static", "footer.html")
+PART = os.path.join(os.path.dirname(__file__),"..", "static", "part.html")
 
 class index:
 
@@ -81,6 +82,6 @@ if __name__ == "__main__":
         '/', 'index',
         '/wrank', 'LadderController'
     )
-    k = wrank.LadderManager(os.path.join(os.path.dirname(__file__), "kicker.log"))
+    k = wrank.LadderManager(sys.argv[2])
     app = web.application(urls, globals())
     app.run()
