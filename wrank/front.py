@@ -8,9 +8,9 @@ import argparse
 import os
 import time
 
-import backend
-import heuristics
-import ladder.ladders as ladders
+import wrank.backend as backend
+import wrank.heuristics as heuristics
+import wrank.ladder.ladders as ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 

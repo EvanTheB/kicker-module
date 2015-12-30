@@ -24,7 +24,7 @@ DRAW_PROBABILITY = 0.5
 # beta is the variance in real performance.
 BETA = 25.0 / 6
 # this keeps sigma up, to allow for real skills to change over time
-DYNAMICS_FACTOR = 25.0 / 300
+DYNAMICS_FACTOR = 25.0 / 30
 
 import math
 import numpy as np

@@ -1,5 +1,5 @@
-from . import backend
-from .ladder import ladders
+import wrank.backend as backend
+import wrank.ladder.ladders as ladders
 
 import time
 
