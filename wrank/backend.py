@@ -172,28 +172,20 @@ class AddPlayerEvent(object):
 class LadderGame(object):
 
     def __init__(self, command_words, players, create_time):
-        self.command_words = command_words
+        self.command_words = list(command_words)
         self.create_time = create_time
+        self.teams = [[]]
+        self.wins = []
 
-        if command_words[2] == u'beat':
-            self.score_a = 2
-        elif command_words[2] == u'draw':
-            self.score_a = 1
-        elif command_words[2] == u'lost':
-            self.score_a = 0
-        else:
-            assert False, "must be beat|draw|lost: {}".format(
-                " ".join(command_words))
-        self.score_b = 2 - self.score_a
-
-        self.team_a = command_words[0:2]
-        self.team_b = command_words[3:5]
-
-        for p in self.team_a + self.team_b:
-            assert p in players, "Player not found: {}".format(p)
-            players[p].games.append(self)
-        self.team_a_players = [players[p] for p in self.team_a]
-        self.team_b_players = [players[p] for p in self.team_b]
+        for w in command_words:
+            if w.isalpha():
+                assert w in players
+                self.teams[-1].append(w)
+            elif w in ['=', '>']:
+                self.teams.append([])
+                self.wins.append(w)
+            else:
+                assert False
 
     def __str__(self):
         return "Game: " + " ".join(self.command_words)
@@ -231,16 +223,14 @@ def test():
     k = LadderData("tmp_test.log")
 
     for x in range(10):
-        k.add_player(str(x))
+        k.add_player(chr(ord('a') + x))
     p, g = k.get_players_games()
     print len(p), len(g)
     print len(list(all_games(p, lambda x: True)))
 
-    for x in range(5):
-        players = random.sample(p.keys(), 4)
-        k.add_game(players[0:2] + ['beat'] + players[3:])
-        k.add_game(players[0:2] + ['lost'] + players[3:])
-        k.add_game(players[0:2] + ['draw'] + players[3:])
+    k.add_game(["a", '>', 'b'])
+    k.add_game(["a", 'c', '>', 'b', 'd'])
+    k.add_game(["a", '=', 'c', '>', 'b', 'd'])
     k.add_player("one_more")
     p, g = k.get_players_games()
     print len(p), len(g)

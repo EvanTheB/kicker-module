@@ -100,11 +100,12 @@ def calculate_match_quality(team_a, team_b):
     return sqrtPart * expPart
 
 
-def calculate_nvn(team_a, team_b, score_a, score_b):
+def calculate_nvn(team_a, team_b, was_win):
     """
     Calculates new trueskills for a two team game.
     Scores are translated to win/loss/draw.
     Teams are lists of players with 'mu' and 'sigma'
+    If it wasnt a win it was a draw.
     """
     draw_margin = get_draw_margin_from_draw_probability(
         DRAW_PROBABILITY, BETA, len(team_a) + len(team_b))
@@ -116,13 +117,10 @@ def calculate_nvn(team_a, team_b, score_a, score_b):
     mean_b = sum([p.mu for p in team_b])
 
     # winner - loser
-    if score_a > score_b:
+    if was_win:
         mean_delta_a = (mean_a - mean_b)
         mean_delta_b = mean_delta_a
-    elif score_b > score_a:
-        mean_delta_a = (mean_b - mean_a)
-        mean_delta_b = mean_delta_a
-    elif score_b == score_a:
+    else:
         mean_delta_a = mean_a - mean_b
         mean_delta_b = mean_b - mean_a
 
@@ -153,9 +151,9 @@ def calculate_nvn(team_a, team_b, score_a, score_b):
             player.sigma = new_std_dev
     # print "game:"
     update_team_ratings(
-        team_a, mean_delta_a, score_a == score_b, score_a > score_b)
+        team_a, mean_delta_a, not was_win, was_win)
     update_team_ratings(
-        team_b, mean_delta_b, score_a == score_b, score_b > score_a)
+        team_b, mean_delta_b, not was_win, False)
 
 
 def calculate_1v1(team_a, team_b, score_a, score_b):

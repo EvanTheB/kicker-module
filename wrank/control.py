@@ -8,9 +8,8 @@ import argparse
 import os
 import time
 
-from . import backend
-from . import heuristics
-from .ladder import ladders
+import wrank.backend as backend
+from wrank.ladder import ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 
@@ -145,10 +144,7 @@ class LadderManager(object):
         add.set_defaults(func=self._add_player)
 
         game = subcommands.add_parser('game')
-        game.add_argument('team_a', type=str, nargs=2)
-        game.add_argument('result', type=str,
-                          choices=['beat', 'draw', 'lost'])
-        game.add_argument('team_b', type=str, nargs=2)
+        game.add_argument('words', type=str, nargs='*')
         game.set_defaults(func=self._add_game)
 
         history = subcommands.add_parser('history')
@@ -232,15 +228,14 @@ class LadderManager(object):
 
     def _add_player(self, command):
         ret = self.data.add_player(command.name)
-        self.write_index_html()
+        #self.write_index_html()
         return [ret]
 
     def _add_game(self, command):
         ret = self.data.add_game(
-            command.team_a
-            + [command.result]
-            + command.team_b)
-        self.write_index_html()
+                command.words
+        )
+        #self.write_index_html()
         return [ret]
 
     def _show_ladder(self, command):
@@ -305,24 +300,30 @@ class LadderManager(object):
 
 def test():
     k = LadderManager("tmp_test.log")
-    print "\n".join(k.ladder_command(["ladder", "basic"]))
-    print "\n".join(k.ladder_command(["ladder", "scaled"]))
-    print "\n".join(k.ladder_command(["ladder", "ELO"]))
-    print "\n".join(k.ladder_command(["ladder"]))
-
     print "\n".join(k.ladder_command(["history"]))
 
-    print "\n".join(k.ladder_command(["whowins", "0", "1", "2",
-                                      "3"]))
-
-    print "\n".join(k.ladder_command(["next", "--heuristic", "class_warfare", "0", "1", "2", "3", "4"]))
-    print "\n".join(k.ladder_command(["next", "1", "0", "2"]))
-    print "\n".join(k.ladder_command(["next", "--heuristic", "close_game", "3"]))
-    print "\n".join(k.ladder_command(["next"]))
-
     print "\n".join(k.ladder_command(["add", "newplayer"]))
-    print "\n".join(k.ladder_command(["game", "newplayer", "newplayer",
-    "beat", "newplayer", "newplayer"]))
+    print "\n".join(k.ladder_command(["game", "a", "newplayer",
+    ">", "b", '=', "c"]))
+    print "\n".join(k.ladder_command(["game", "a",">", "newplayer",
+    ">", "b", '=', "c"]))
+
+    print "\n".join(k.ladder_command(["history"]))
+    print "\n".join(k.ladder_command(["ladder", "basic"]))
+
+    print "\n".join(k.ladder_command(["ladder", "scaled"]))
+#    print "\n".join(k.ladder_command(["ladder", "ELO"]))
+    print "\n".join(k.ladder_command(["ladder"]))
+#
+#
+#    print "\n".join(k.ladder_command(["whowins", "0", "1", "2",
+#                                      "3"]))
+#
+#    print "\n".join(k.ladder_command(["next", "--heuristic", "class_warfare", "0", "1", "2", "3", "4"]))
+#    print "\n".join(k.ladder_command(["next", "1", "0", "2"]))
+#    print "\n".join(k.ladder_command(["next", "--heuristic", "close_game", "3"]))
+#    print "\n".join(k.ladder_command(["next"]))
+#
 
     # print k.write_index_html()
     # print "\n".join(k.ladder_command(["next", "-h"]))

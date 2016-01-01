@@ -1,6 +1,6 @@
-import wrank
+import wrank.control
 import sys
 
 if __name__ == '__main__':
-    k = wrank.LadderManager("kicker.log")
+    k = wrank.control.LadderManager("kicker.log")
     print "\n".join(k.ladder_command(sys.argv[1:]))

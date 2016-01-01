@@ -1,4 +1,4 @@
-from . import trueskill
+from wrank.ladder import trueskill
 
 class PlayerWrapper(object):
 
@@ -12,17 +12,20 @@ class PlayerWrapper(object):
 
 
 class BasicLadder(object):
-
+    """Each team you beat is +1."""
     def __init__(self):
         self.players = {}
 
     def add_game(self, game):
-        for p in game.team_a:
-            self.players[p].score += game.score_a - game.score_b
+        score_add = 0
+        for p in game.teams[-1]:
             self.players[p].games += 1
-        for p in game.team_b:
-            self.players[p].score -= game.score_a - game.score_b
-            self.players[p].games += 1
+        for t, result in zip(reversed(game.teams[0:-1]), reversed(game.wins)):
+            if result == '>':
+                score_add += 1
+            for p in t:
+                self.players[p].score += score_add
+                self.players[p].games += 1
 
     def process(self, players, games):
         self.players = {n: PlayerWrapper(p) for n, p in players.items()}
@@ -58,12 +61,15 @@ class BasicScaledLadder(object):
         self.players = {}
 
     def add_game(self, game):
-        for p in game.team_a:
-            self.players[p].score += game.score_a - game.score_b
+        score_add = 0
+        for p in game.teams[-1]:
             self.players[p].games += 1
-        for p in game.team_b:
-            self.players[p].score -= game.score_a - game.score_b
-            self.players[p].games += 1
+        for t, result in zip(reversed(game.teams[0:-1]), reversed(game.wins)):
+            if result == '>':
+                score_add += 1
+            for p in t:
+                self.players[p].score += score_add
+                self.players[p].games += 1
 
     def process(self, players, games):
         self.players = {n: PlayerWrapper(p) for n, p in players.items()}
@@ -89,8 +95,7 @@ class BasicScaledLadder(object):
             ret.append((
                 i,
                 player.player.name,
-                float(player.score)
-                / (1E-30 + float(player.games)),
+                float(player.score) / (float(player.games)) if player.score else 0,
             ))
             i += 1
         return ret
@@ -102,7 +107,7 @@ class ELOLadder(object):
         self.players = {}
         self.K = K
 
-    def add_game(self, game):
+    def elo_calc(team_a, team_b):
         """
         Do an ELO rank with made up stuff for the 2 player bit.
         ref: "https://metinmediamath.wordpress.com/2013/11/27/how-to-calculate-the-elo-rating-including-example/"
@@ -126,6 +131,17 @@ class ELOLadder(object):
         for p in game.team_b:
             self.players[p].rank += rd2
             self.players[p].games += 1
+
+    def add_game(self, game):
+        score_add = 0
+        for p in game.teams[-1]:
+            self.players[p].games += 1
+        for t, result in zip(reversed(game.teams[0:-1]), reversed(game.wins)):
+            if result == '>':
+                score_add += 1
+            for p in t:
+                self.players[p].score += score_add
+                self.players[p].games += 1
 
     def process(self, players, games):
         self.players = {n: PlayerWrapper(p) for n, p in players.items()}
@@ -154,7 +170,6 @@ class ELOLadder(object):
 
 
 class TrueSkillLadder(object):
-
     """
     ref:
     http://trueskill.org/
@@ -179,11 +194,12 @@ class TrueSkillLadder(object):
         )
 
     def add_game(self, game):
-        trueskill.calculate_nvn(
-            [self.players[p] for p in game.team_a],
-            [self.players[p] for p in game.team_b],
-            game.score_a,
-            game.score_b)
+        for team_a, team_b, result in zip(game.teams[0:-1], game.teams[1:], game.wins):
+            trueskill.calculate_nvn(
+                [self.players[p] for p in team_a],
+                [self.players[p] for p in team_b],
+                result == '>'
+            )
 
     def process(self, players, games):
         self.players = {n: PlayerWrapper(p) for n, p in players.items()}
