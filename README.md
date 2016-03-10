@@ -7,11 +7,21 @@ Currently only supports 2v2 games, goal is to make it more general.
 
 Data is tracked in a file kicker.log, this should be provided on command line in future. Fixing of bad data should be done by editing the log file directly, it should be straightforward.
 
+# Sick Features
+* ladder! 
+** ELO or trueskill
+* graphs!
+* predict outcome of any game!
+* suggest good future games!
+** based on heuristics!
+* history of games for any set of players!
+
 # Frontends
-IRC via willie
+IRC via sopel
 web via web.py
-cli via __main__.py (python wrank -m)
-svg graphs via numpy
+cli
+svg graphs
+hipchat???
 
 You will likely need to edit the frontends to make them work, they assume you are me.
 
