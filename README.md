@@ -17,11 +17,11 @@ Data is tracked in a file kicker.log, this should be provided on command line in
 * history of games for ANY set of players!
 
 # Frontends
-IRC via sopel
-web via web.py
-cli
-svg graphs
-hipchat???
+* IRC via sopel
+* web via web.py
+* cli
+* svg graphs
+* hipchat???
 
 You will likely need to edit the frontends to make them work, they assume you are me.
 
