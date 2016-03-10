@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 import argparse
 import os
 import time
+import itertools
+from toolz import frequencies
 
 import wrank.backend as backend
 import wrank.heuristics as heuristics
@@ -121,7 +123,7 @@ class LadderManager(object):
                             default='trueskill',
                             nargs='?',
                             )
-        ladder.add_argument('-v', '--verbose', action='store_true')
+        ladder.add_argument('-v', '--verbose', action='count')
         ladder.add_argument('options', nargs='*')
         ladder.set_defaults(func=self._show_ladder)
 
@@ -247,7 +249,8 @@ class LadderManager(object):
         elif command.type == 'trueskill':
             ladder = ladders.TrueSkillLadder()
         data = ladder.process(players, games)
-        if not command.verbose and command.type == 'trueskill':
+        print command.verbose
+        if command.verbose is None and command.type == 'trueskill':
             # title line is 0
             lines = [0]
             keep = set(games[-1].team_a + games[-1].team_b)
@@ -260,6 +263,24 @@ class LadderManager(object):
                     lines.append(i-1)
                 # or the position changed
                 if line[change_index] != '0':
+                    lines.append(i)
+            data = [line for i,line in enumerate(data) if i in lines]
+        elif command.verbose == 1 and command.type == 'trueskill':
+            # title line is 0
+            lines = [0]
+            # played in last 50 games
+            keep = reduce(
+                lambda a,b: a.union(b), (set(g.team_a + g.team_b) for g in games[-100:])
+            )
+            # played at least 3 games
+            keep = keep.intersection(set(p for p,c in itertools.ifilter(
+                lambda x: x[1] > 2,
+                frequencies(p for g in games for p in g.team_a + g.team_b).items()
+            )))
+            change_index = data[0].index('change')
+            for i,line in enumerate(data):
+                # if one of our 'keepers'
+                if set(line).intersection(keep):
                     lines.append(i)
             data = [line for i,line in enumerate(data) if i in lines]
         return pretty_print_2d(data)
