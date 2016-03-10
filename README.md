@@ -9,12 +9,12 @@ Data is tracked in a file kicker.log, this should be provided on command line in
 
 # Sick Features
 * ladder! 
-  * ELO or trueskill!
-* graphs!
-* predict outcome of any game!
+  * elo OR trueskill!
+* graphs? YES!
+* predict outcome of ANY game!
 * suggest good future games!
-  * based on heuristics!
-* history of games for any set of players!
+  * now with HEURISTICS!
+* history of games for ANY set of players!
 
 # Frontends
 IRC via sopel
