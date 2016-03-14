@@ -28,26 +28,30 @@ DYNAMICS_FACTOR = 25.0 / 300
 
 import math
 import numpy as np
+import itertools
 
 
-def match_quality(team_a, team_b):
-    mean_a = sum([p.mu for p in team_a])
-    mean_b = sum([p.mu for p in team_b])
-    mean_delta = mean_a - mean_b
-    denom = (2 * BETA ** 2 + sum(
-        [p.sigma ** 2 for p in team_a + team_b]))
-
-    sqrt_part = (2 * BETA ** 2) / denom
-    exp_part = -0.5 * (mean_delta) ** 2 / denom
-    return math.sqrt(sqrt_part) * math.exp(exp_part)
-
-
-def match_quality_hard(team_a, team_b):
+def match_quality(teams):
     # Set up multivariate gaussians
-    u = np.matrix([p.mu for p in team_a + team_b]).T
-    summa = np.diagflat([p.sigma ** 2 for p in team_a + team_b])
-    col = np.array([1] * len(team_a) + [-1] * len(team_b))
-    A = np.matrix([col]).T
+    u = np.matrix([p.mu for p in itertools.chain.from_iterable(teams)]).T
+    summa = np.diagflat(
+        [p.sigma ** 2 for p in itertools.chain.from_iterable(teams)])
+
+    total_players = sum(len(x) for x in teams)
+    done_players = 0
+    A_T = []
+    for i in range(len(teams) - 1):
+        A_T.append(
+            np.array(
+                [0] * done_players +
+                [1] * len(teams[i]) +
+                [-1] * len(teams[i + 1]) +
+                [0] * (total_players - done_players -
+                       len(teams[i]) - len(teams[i + 1]))
+            )
+        )
+        done_players += len(teams[i])
+    A = np.matrix(A_T).T
 
     common = BETA ** 2 * A.T * A + A.T * summa * A
     exp_part = -0.5 * u.T * A * np.linalg.inv(common) * A.T * u
