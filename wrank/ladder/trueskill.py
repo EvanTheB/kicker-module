@@ -67,41 +67,19 @@ def chances(team_a, team_b):
     c = math.sqrt(sum([p.sigma ** 2 for p in team_a]) +
                   sum([p.sigma ** 2 for p in team_b]) +
                   len(team_a + team_b) * BETA ** 2)
-    mean_a = sum([p.mu for p in team_a])
-    mean_b = sum([p.mu for p in team_b])
-    mean_delta = mean_a - mean_b
+    skill_a = sum([p.mu for p in team_a])
+    skill_b = sum([p.mu for p in team_b])
+    skill_delta = skill_a - skill_b
 
-    mean_delta /= c
+    skill_delta /= c
     draw_margin /= c
-    p_win = gaussian_cumulative_to(mean_delta - abs(draw_margin))
-    p_loss = gaussian_cumulative_to(-mean_delta - abs(draw_margin))
+    p_win = gaussian_cumulative_to(skill_delta - abs(draw_margin))
+    p_loss = gaussian_cumulative_to(-skill_delta - abs(draw_margin))
 
-    p_draw = (gaussian_cumulative_to(abs(mean_delta) + abs(draw_margin))
-              - gaussian_cumulative_to(abs(mean_delta) - abs(draw_margin)))
+    p_draw = (gaussian_cumulative_to(abs(skill_delta) + abs(draw_margin))
+              - gaussian_cumulative_to(abs(skill_delta) - abs(draw_margin)))
 
     return p_win, p_draw, p_loss
-
-
-def calculate_match_quality(team_a, team_b):
-    # We just use equation 4.1 found on page 8 of the TrueSkill 2006 paper:
-    beta_squared = BETA ** 2
-
-    # This is the square root part of the equation:
-    sqrtPart = math.sqrt((4 * beta_squared) /
-                         (4 * beta_squared +
-                          sum([p.sigma ** 2 for p in team_a]) +
-                          sum([p.sigma ** 2 for p in team_b])))
-    # This is the exponent part of the equation:
-    expPart = math.exp((-
-                        1 *
-                        (sum([p.mu for p in team_a]) -
-                         sum([p.mu for p in team_b])) ** 2) /
-                       (2 *
-                        (4 *
-                         beta_squared +
-                         sum([p.sigma ** 2 for p in team_a]) +
-                            sum([p.sigma ** 2 for p in team_b]))))
-    return sqrtPart * expPart
 
 
 def calculate_nvn(team_a, team_b, was_win):
