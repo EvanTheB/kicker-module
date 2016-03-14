@@ -113,16 +113,16 @@ def calculate_nvn(team_a, team_b, was_win):
     c = math.sqrt(sum([p.sigma ** 2 for p in team_a]) +
                   sum([p.sigma ** 2 for p in team_b]) +
                   len(team_a + team_b) * BETA ** 2)
-    mean_a = sum([p.mu for p in team_a])
-    mean_b = sum([p.mu for p in team_b])
+    skill_a = sum([p.mu for p in team_a])
+    skill_b = sum([p.mu for p in team_b])
 
     # winner - loser
     if was_win:
-        mean_delta_a = (mean_a - mean_b)
-        mean_delta_b = mean_delta_a
+        skill_delta_a = skill_a - skill_b
+        skill_delta_b = skill_delta_a
     else:
-        mean_delta_a = mean_a - mean_b
-        mean_delta_b = mean_b - mean_a
+        skill_delta_a = skill_a - skill_b
+        skill_delta_b = skill_b - skill_a
 
     def update_team_ratings(team, mean_delta, is_draw, is_winner):
         """
@@ -151,9 +151,9 @@ def calculate_nvn(team_a, team_b, was_win):
             player.sigma = new_std_dev
     # print "game:"
     update_team_ratings(
-        team_a, mean_delta_a, not was_win, was_win)
+        team_a, skill_delta_a, not was_win, was_win)
     update_team_ratings(
-        team_b, mean_delta_b, not was_win, False)
+        team_b, skill_delta_b, not was_win, False)
 
 
 def calculate_1v1(team_a, team_b, score_a, score_b):
