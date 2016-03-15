@@ -28,4 +28,4 @@ def kicker_command(bot, trigger):
 
 
 def setup(bot):
-    bot.memory['kicker_manager'] = wrank.LadderManager("kicker.log")
+    bot.memory['kicker_manager'] = wrank.front.LadderManager("kicker.log")

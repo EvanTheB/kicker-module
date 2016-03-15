@@ -86,6 +86,34 @@ def graph_skill(p, g, ladder):
     pylab.savefig('graph_skill.svg')
     plt.show()
 
+def graph_skill_topn(p, g, ladder, n):
+    def get_names_skill(data):
+        ret = []
+        for l in data[1:]:
+            ret.append((l[1], l[4]))
+        return ret
+
+    def get_top_n(data):
+        tup = sorted(data, key=lambda x: float(x[1]))
+        names = [t[0] for t in tup[-n:]]
+        return names
+
+    graph_data = []
+    for i in range(1, len(g) + 1):
+        data = ladder.process(p, g[0:i])
+        graph_data.append(get_names_skill(data))
+
+    names = sorted(get_top_n(graph_data[-1]))
+    graph_data = [sorted(x) for x in get_subset(graph_data, names)]
+
+    ys = data_to_yarr(graph_data)
+    for i in range(len(ys)):
+        y = np.array(ys[i])
+        plt.plot(range(len(y)), y, label = names[i])
+    plt.legend(loc=3, ncol=len(names)/2)
+    pylab.savefig('graph_skill_topn.svg')
+    plt.show()
+
 
 def graph_skill_error(p, g, ladder):
     def get_names_skill(data):
@@ -101,7 +129,7 @@ def graph_skill_error(p, g, ladder):
         return ret
 
     def get_top_n(data):
-        tup = sorted(data, key=lambda x: x[1])
+        tup = sorted(data, key=lambda x: float(x[1]))
         names = [t[0] for t in tup[:6]]
         return names
 
@@ -111,9 +139,9 @@ def graph_skill_error(p, g, ladder):
         data = ladder.process(p, g[0:i])
         graph_data.append(get_names_skill(data))
         err_data.append(get_names_err(data))
-    names = get_top_n(err_data[-1])
-    graph_data = get_subset(graph_data, names)
-    err_data = get_subset(err_data, names)
+    names = sorted(get_top_n(err_data[-1]))
+    graph_data = [sorted(x) for x in get_subset(graph_data, names)]
+    err_data = [sorted(x) for x in get_subset(err_data, names)]
 
     ys = data_to_yarr(graph_data)
     errs = data_to_yarr(err_data)
@@ -129,13 +157,18 @@ def graph_skill_error(p, g, ladder):
 
 
 
+
 if __name__ == '__main__':
-    k = wrank.backend.LadderData("kicker.log")
+    import sys
+    k = wrank.backend.LadderData(sys.argv[1])
     p, g = k.get_players_games()
 
     ladder = wrank.ladder.ladders.TrueSkillLadder()
 
+    graph_skill_topn(p, g, ladder, 5)
+    graph_skill_error(p, g, ladder)
     graph_level(p, g, ladder)
     graph_ranks(p, g, ladder)
     graph_skill(p, g, ladder)
-    graph_skill_error(p, g, ladder)
+
+

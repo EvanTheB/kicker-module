@@ -63,20 +63,20 @@ def bracket_hard(players, potentials):
 
 
 if __name__ == '__main__':
-    import wrank
-    from wrank.wrank import HeuristicManager
-    from wrank import backend
+    import wrank.front
+    import wrank.backend as backend
     from wrank.ladder import ladders
+    import sys
 
-    k = wrank.LadderManager("kicker.log")
+    k = wrank.front.LadderManager(sys.argv[1])
 
-    data = backend.LadderData("kicker.log")
+    data = backend.LadderData(sys.argv[1])
     players, games = data.get_players_games()
 
     pre_ladder = ladders.TrueSkillLadder()
     pre_data = pre_ladder.process(players, games)
 
-    draws = HeuristicManager().get_heuristic(
+    draws = wrank.front.HeuristicManager().get_heuristic(
         pre_ladder, players, games, "slow")
 
     # all_games = backend.all_games(players, lambda x: True)

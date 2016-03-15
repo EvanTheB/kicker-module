@@ -6,14 +6,15 @@ Currently broken i think since rearrange of files.
 
 import web
 import os
+import sys
 import json
 import urllib
 
-import wrank
+import wrank.front
 
-HEADER = os.path.join(os.path.dirname(__file__), "static", "header.html")
-FOOTER = os.path.join(os.path.dirname(__file__), "static", "footer.html")
-PART = os.path.join(os.path.dirname(__file__), "static", "part.html")
+HEADER = os.path.join(os.path.dirname(__file__),"..", "static", "header.html")
+FOOTER = os.path.join(os.path.dirname(__file__),"..", "static", "footer.html")
+PART = os.path.join(os.path.dirname(__file__),"..", "static", "part.html")
 
 class index:
 
@@ -28,7 +29,7 @@ class index:
 
         page += """
         <script type="text/javascript">
-        function wrank_do_it()
+        function wrank_do_it(command_text)
         {
             function ladder_response(json_response){
                 var para = document.createElement("P");
@@ -42,23 +43,30 @@ class index:
                 );
                 jQuery("#LADDER_OUTPUT").prepend(para);
             }
-            var textBox = document.getElementById('LADDER_INPUT');
-            jQuery.getJSON('wrank?' + jQuery.param({'command':encodeURIComponent(textBox.value)}), success=ladder_response);
+
+            jQuery.getJSON('wrank?' + jQuery.param({'command':encodeURIComponent(command_text)}), success=ladder_response);
         }
+        function command_send_button()
+        {
+            var textBox = document.getElementById('LADDER_INPUT');
+            wrank_do_it(textBox.value)
+        }
+        wrank_do_it("ladder -vv")
         </script>
-        <button id="button" onclick="wrank_do_it()">kickify</button>
+        <button id="button" onclick="command_send_button()">send command</button>
         <input type="text" id="LADDER_INPUT">
+        <div>
+        Output of commands will print below, commands are:<br>
+        ladder [-v[v]] (print the ladder with increasing verbosity levels)<br>
+        add [player] (add a player) <br>
+        game [a b] {beat,lost,draw} [c d] (add a game) <br>
+        history [player] (show the game history)<br>
+        next [names] (given some players, pick a nice game)<br>
+        whowins a b c d (show the probabilities of the game a b vs c d)<br>
+        </div>
         <div id="LADDER_OUTPUT">
-        Here goes the output, commands:<br>
-        add [player]<br>
-        game [a b] {beat,lost,draw} [c d]<br>
-        next [names]<br>
-        whowins a b c d<br>
         </div>
         """
-
-        with open(PART) as f:
-            page = page + f.read()
 
         # footer content
         with open(FOOTER) as f:
@@ -81,6 +89,6 @@ if __name__ == "__main__":
         '/', 'index',
         '/wrank', 'LadderController'
     )
-    k = wrank.LadderManager(os.path.join(os.path.dirname(__file__), "kicker.log"))
+    k = wrank.front.LadderManager(sys.argv[2])
     app = web.application(urls, globals())
     app.run()
