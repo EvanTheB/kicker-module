@@ -1,7 +1,8 @@
-from . import backend
-from .ladder import ladders
+from wrank import backend
+from wrank.ladder import ladders
 
 import time
+import itertools
 
 
 class Heuristic(object):
@@ -11,14 +12,11 @@ class Heuristic(object):
     rate returns 0->1, 1 is good.
     """
 
-    def __init__(self, arg):
-        pass
-
     def rate(self, team_a, team_b):
-        pass
+        raise NotImplementedError()
 
-    def rate_all(self, games_iterator):
-        return [(self.rate(g[0], g[1]), (g[0], g[1])) for g in games_iterator]
+    def rate_all(self, games):
+        return [(self.rate(g[0], g[1]), (g[0], g[1])) for g in games]
 
 
 class DrawChanceHeuristic(Heuristic):
@@ -119,7 +117,7 @@ class TimeSinceLastPlayedHeuristic(Heuristic):
     def __init__(self, players, games, function):
         self.times = {p.name: p.create_time for p in players.values()}
         for g in games:
-            for p in g.team_a + g.team_b:
+            for p in itertools.chain.from_iterable(g.teams):
                 self.times[p] = g.create_time
         self.function = function
 
@@ -136,21 +134,15 @@ class UnplayedMatchupsHeuristic(Heuristic):
         self.played_with = {p: {opp: 0 for opp in players} for p in players}
         self.played_vs = {p: {opp: 0 for opp in players} for p in players}
         for g in games:
-            for p1 in g.team_a:
-                for p2 in g.team_b:
-                    self.played_vs[p1][p2] += 1
-                    self.played_vs[p2][p1] += 1
-        for g in games:
-            for p1 in g.team_a:
-                for p2 in g.team_a:
-                    if p1 == p2:
-                        continue
+            for t1, t2 in itertools.combinations(g.teams, 2):
+                for p1 in t1:
+                    for p2 in t2:
+                        self.played_vs[p1][p2] += 1
+                        self.played_vs[p2][p1] += 1
+            for t in g.teams:
+                for p1, p2 in itertools.combinations(t, 2):
                     self.played_with[p1][p2] += 1
-            for p1 in g.team_b:
-                for p2 in g.team_b:
-                    if p1 == p2:
-                        continue
-                    self.played_with[p1][p2] += 1
+                    self.played_with[p2][p1] += 1
 
     def rate(self, team_a, team_b):
         vs = 0.
@@ -161,7 +153,7 @@ class UnplayedMatchupsHeuristic(Heuristic):
         # double counting all these
         for p1 in team_b:
             for p2 in team_b:
-                if p1 == p2:
+                if p1 == p2P:
                     continue
                 _with += self.played_with[p1][p2]
         for p1 in team_a:
@@ -197,12 +189,12 @@ class CombinerHeuristic(Heuristic):
         self.b = b
         self.function = function
 
-
     def rate(self, team_a, team_b):
         return self.function(
             self.a(team_a, team_b),
             self.b(team_a, team_b)
-            )
+        )
+
 
 class LinearSumHeuristic(Heuristic):
 
@@ -239,44 +231,51 @@ def test():
 
     all_games = backend.all_games(players, lambda x: True)
     draws = DrawChanceHeuristic(pre_ladder)
-    # print "\n".join([str(x) for x in sorted(draws.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(draws.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     linear_10 = linear_clamped_function(0., 0., 10., 1.)
     all_games = backend.all_games(players, lambda x: True)
     disrup = LadderDisruptionHeuristic(pre_ladder, players, games, linear_10)
-    # print "\n".join([str(x) for x in sorted(disrup.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(disrup.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     linear_3_10 = linear_clamped_function(3. * 4., 1., 10. * 4., 0.)
     all_games = backend.all_games(players, lambda x: True)
     clump = TrueskillClumpingHeuristic(pre_data, linear_3_10)
-    # print "\n".join([str(x) for x in sorted(clump.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(clump.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     linear_0_1 = linear_clamped_function(0., 0., 1.0, 1.)
     all_games = backend.all_games(players, lambda x: True)
     sigmars = SigmaReductionHeuristic(pre_ladder, players, games, linear_0_1)
-    # print "\n".join([str(x) for x in sorted(sigmars.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(sigmars.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     linear_week_month = linear_clamped_function(
         time.time() - 7. * 24. * 60. * 60., 0., time.time() - 30. * 24. * 60. * 60., 1.)
     all_games = backend.all_games(players, lambda x: True)
     timesince = TimeSinceLastPlayedHeuristic(players, games, linear_week_month)
-    # print "\n".join([str(x) for x in sorted(timesince.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(timesince.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     linear_0_30 = linear_clamped_function(0., 1., 30., 0.)
     all_games = backend.all_games(players, lambda x: True)
     unplayed = UnplayedMatchupsHeuristic(players, games, linear_0_30)
-    # print "\n".join([str(x) for x in sorted(unplayed.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(unplayed.rate_all(all_games),
+    # key=lambda x: x[0])])
 
     lin_heur = [
-            (1., draws),
-            (1., disrup),
-            (1., clump),
-            (1., sigmars),
-            (1., timesince),
-            (1., unplayed),
-        ]
+        (1., draws),
+        (1., disrup),
+        (1., clump),
+        (1., sigmars),
+        (1., timesince),
+        (1., unplayed),
+    ]
     all_heur = LinearSumHeuristic(lin_heur)
-    # print "\n".join([str(x) for x in sorted(all_heur.rate_all(all_games), key=lambda x: x[0])])
+    # print "\n".join([str(x) for x in sorted(all_heur.rate_all(all_games),
+    # key=lambda x: x[0])])
 
 
 if __name__ == '__main__':

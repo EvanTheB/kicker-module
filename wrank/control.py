@@ -9,6 +9,7 @@ import os
 import time
 
 import wrank.backend as backend
+import wrank.heuristics as heuristics
 from wrank.ladder import ladders
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
