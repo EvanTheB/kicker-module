@@ -3,12 +3,12 @@ A ranking system for games.
 python setup.py develop
 
 Originally a ladder for kicker controlled by IRC, now cli and web frontends also.
-Currently only supports 2v2 games, goal is to make it more general.
+Supports NvN games, more than 2 teams work, but the ladder is not correct for trueskill. It probably wont work for the others too.
 
 Data is tracked in a file kicker.log, this should be provided on command line in future. Fixing of bad data should be done by editing the log file directly, it should be straightforward.
 
 # Sick Features
-* ladder! 
+* ladder!
   * elo OR trueskill!
 * graphs? YES!
 * predict outcome of ANY game!
