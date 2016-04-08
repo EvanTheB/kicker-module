@@ -153,7 +153,7 @@ class UnplayedMatchupsHeuristic(Heuristic):
         # double counting all these
         for p1 in team_b:
             for p2 in team_b:
-                if p1 == p2P:
+                if p1 == p2:
                     continue
                 _with += self.played_with[p1][p2]
         for p1 in team_a:

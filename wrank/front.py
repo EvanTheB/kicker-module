@@ -13,6 +13,7 @@ from toolz import frequencies
 import wrank.backend as backend
 import wrank.heuristics as heuristics
 from wrank.ladder import ladders
+from functools import reduce
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 
@@ -217,14 +218,14 @@ class LadderManager(object):
 
     def _add_player(self, command):
         ret = self.data.add_player(command.name)
-        #self.write_index_html()
+        # self.write_index_html()
         return [ret]
 
     def _add_game(self, command):
         ret = self.data.add_game(
-                command.words
+            command.words
         )
-        #self.write_index_html()
+        # self.write_index_html()
         return [ret]
 
     def _show_ladder(self, command):
@@ -243,7 +244,7 @@ class LadderManager(object):
         elif command.type == 'scaled':
             ladder = ladders.BasicScaledLadder()
         elif command.type == 'trueskill':
-            ladder = ladders.TrueSkillLadder()
+            ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 30.)
 
         data = ladder.process(players, games)
         print command.verbose
@@ -252,36 +253,40 @@ class LadderManager(object):
             lines = [0]
             keep = set(p for p in itertools.chain.from_iterable(games[-1].teams))
             change_index = data[0].index('change')
-            for i,line in enumerate(data):
+            for i, line in enumerate(data):
                 # if one of our 'keepers'
                 if set(line).intersection(keep):
                     lines.append(i)
-                    lines.append(i+1)
-                    lines.append(i-1)
+                    lines.append(i + 1)
+                    lines.append(i - 1)
                 # or the position changed
                 if line[change_index] != '0':
                     lines.append(i)
-            data = [line for i,line in enumerate(data) if i in lines]
+            data = [line for i, line in enumerate(data) if i in lines]
         elif command.verbose == 1 and command.type == 'trueskill':
             # title line is 0
             lines = [0]
             # played in last 50 games
             keep = reduce(
-                lambda a,b: a.union(b), (set(g.team_a + g.team_b) for g in games[-100:])
+                lambda a, b: a.union(b), (
+                    set(p for p in itertools.chain.from_iterable(games[-1].teams))
+                    for g in games[-100:]
+                )
             )
             # played at least 3 games
-            keep = keep.intersection(set(p for p,c in itertools.ifilter(
+            keep = keep.intersection(set(p for p, c in itertools.ifilter(
                 lambda x: x[1] > 2,
-                frequencies(p for g in games for p in g.team_a + g.team_b).items()
+                frequencies(
+                    p for g in games for p in itertools.chain.from_iterable(games[-1].teams)
+                ).items()
             )))
             change_index = data[0].index('change')
-            for i,line in enumerate(data):
+            for i, line in enumerate(data):
                 # if one of our 'keepers'
                 if set(line).intersection(keep):
                     lines.append(i)
-            data = [line for i,line in enumerate(data) if i in lines]
+            data = [line for i, line in enumerate(data) if i in lines]
         return pretty_print_2d(data)
-
 
     def _show_history(self, command):
         ret = []
@@ -290,8 +295,12 @@ class LadderManager(object):
         games = list(enumerate(games))
         if command.players:
             for p in command.players:
-                games = [(i,g) for (i,g) in games if p in (g.team_a + g.team_b)]
-        for i,g in games:
+                games = [
+                    (i, g) for (
+                        i, g) in games if p in (
+                        itertools.chain.from_iterable(
+                            g.teams))]
+        for i, g in games:
             ret.append("{}: {}".format(i, g))
             i += 1
         ret.reverse()
@@ -299,7 +308,7 @@ class LadderManager(object):
 
     def write_index_html(self):
         players, games = self.data.get_players_games()
-        data_tuples = ladders.TrueSkillLadder().process(
+        data_tuples = ladders.TrueSkillLadder(dynamics_factor=25.0 / 300.).process(
             players, games)
         output = ""
         output += "Trueskill ladder ranked on mu - 3*sigma (P(skill>level)~0.99)<br>\n"

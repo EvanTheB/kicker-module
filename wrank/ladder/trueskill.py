@@ -19,19 +19,13 @@
 # is to show the bare minimum of what a TrueSkill implementation should have.
 # </remarks>
 
-# Kicker, these should go somewhere initty.
-DRAW_PROBABILITY = 0.5
-# beta is the variance in real performance.
-BETA = 25.0 / 6
-# this keeps sigma up, to allow for real skills to change over time
-DYNAMICS_FACTOR = 25.0 / 300
 
 import math
 import numpy as np
 import itertools
 
 
-def match_quality(teams):
+def match_quality(teams, BETA):
     # Set up multivariate gaussians
     u = np.matrix([p.mu for p in itertools.chain.from_iterable(teams)]).T
     summa = np.diagflat(
@@ -59,7 +53,7 @@ def match_quality(teams):
     return math.sqrt(sqrt_part) * math.exp(exp_part)
 
 
-def chances(team_a, team_b):
+def chances(team_a, team_b, DRAW_PROBABILITY, BETA):
 
     draw_margin = get_draw_margin_from_draw_probability(
         DRAW_PROBABILITY, BETA, len(team_a) + len(team_b))
@@ -82,7 +76,7 @@ def chances(team_a, team_b):
     return p_win, p_draw, p_loss
 
 
-def calculate_nvn(team_a, team_b, was_win):
+def calculate_nvn(team_a, team_b, was_win, DRAW_PROBABILITY, BETA, DYNAMICS_FACTOR):
     """
     Calculates new trueskills for a two team game.
     Scores are translated to win/loss/draw.

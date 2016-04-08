@@ -1,5 +1,6 @@
 from wrank.ladder import trueskill
 
+
 class PlayerWrapper(object):
 
     """
@@ -13,6 +14,7 @@ class PlayerWrapper(object):
 
 class BasicLadder(object):
     """Each team you beat is +1."""
+
     def __init__(self):
         self.players = {}
 
@@ -178,19 +180,28 @@ class TrueSkillLadder(object):
     https://github.com/moserware/Skills
     """
 
-    def __init__(self):
+    def __init__(self, draw_probability=0.5, beta=25.0 / 6., dynamics_factor=25.0 / 300.):
+        self._draw_probability = draw_probability
+        # beta is the variance in real performance.
+        self._beta = beta
+        # this keeps sigma up, to allow for real skills to change over time
+        self._dynamics_factor = dynamics_factor
+
         self.players = {}
 
     def chances(self, team_a, team_b):
         return trueskill.chances(
             [self.players[p] for p in team_a],
-            [self.players[p] for p in team_b]
+            [self.players[p] for p in team_b],
+            self._draw_probability,
+            self._beta,
         )
 
     def quality(self, team_a, team_b):
         return trueskill.match_quality(
-            [self.players[p] for p in team_a],
-            [self.players[p] for p in team_b]
+            [[self.players[p] for p in team_a],
+             [self.players[p] for p in team_b]],
+            self._beta,
         )
 
     def add_game(self, game):
@@ -198,7 +209,10 @@ class TrueSkillLadder(object):
             trueskill.calculate_nvn(
                 [self.players[p] for p in team_a],
                 [self.players[p] for p in team_b],
-                result == '>'
+                result == '>',
+                self._draw_probability,
+                self._beta,
+                self._dynamics_factor,
             )
 
     def process(self, players, games):
@@ -240,6 +254,7 @@ class TrueSkillLadder(object):
                 "{:.3}".format(ladder[i].sigma),
             ))
         return ret
+
 
 def test():
     from .. import backend
