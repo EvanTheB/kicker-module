@@ -40,24 +40,38 @@ class LadderDisruptionHeuristic(Heuristic):
         self.games = games
         self.function = function
 
-    def _get_dist(self, ladder_data):
+    def _get_dist(self, before, after):
+        before = {row.name: row for row in before}
         # This counts a swap as '2'
         dist = 0.
-        for row in ladder_data[1:]:
-            dist += abs(float(row[2]))
+        for player in after:
+            dist += abs(float(before[player.name].rank) - float(player.rank))
         return dist
 
     def rate(self, team_a, team_b):
         result_prob = self.ladder.chances(team_a, team_b)
         match_worth = 0.
-        for prob, outcome in zip(result_prob, ['beat', 'draw', 'lost']):
-            game = backend.LadderGame(
-                team_a + (outcome,) + team_b,
-                self.players, 0)
+        before = self.ladder.process(
+                self.players,
+                self.games
+            )
 
-            data = self.ladder.process(self.players,
-                                       self.games + [game])
-            match_worth += prob * self._get_dist(data)
+        for prob, match in zip(result_prob, [
+            team_a + ['>'] + team_b,
+            team_a + ['='] + team_b,
+            team_b + ['>'] + team_a,
+        ]):
+            game = backend.LadderGame(
+                match,
+                self.players,
+                0
+            )
+
+            after = self.ladder.process(
+                self.players,
+                self.games + [game]
+            )
+            match_worth += prob * self._get_dist(before, after)
         return self.function(match_worth)
 
 
@@ -66,7 +80,14 @@ class TrueskillClumpingHeuristic(Heuristic):
     """Prefer similar skills"""
 
     def __init__(self, data, function):
-        self.mus = {l[1]: float(l[4]) for l in data[1:]}
+        mu_index = None
+        # gross
+        for i, e in enumerate(data[0].extra):
+            if e[0] == "mu":
+                mu_index = i
+                break
+        assert mu_index is not None
+        self.mus = {l.name: float(l.extra[mu_index][1]) for l in data}
         self.function = function
 
     def rate(self, team_a, team_b):
@@ -188,7 +209,6 @@ class CombinerHeuristic(Heuristic):
         self.a = a
         self.b = b
         self.function = function
-
 
     def rate(self, team_a, team_b):
         return self.function(

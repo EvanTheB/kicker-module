@@ -1,5 +1,8 @@
 from wrank.ladder import trueskill
 
+from collections import namedtuple
+rank_item = namedtuple('rank_item', ['rank', 'name', 'extra'])
+
 
 class PlayerWrapper(object):
 
@@ -222,37 +225,36 @@ class TrueSkillLadder(object):
             p.mu = 25.
             p.sigma = 25. / 3
 
-        for g in games[:-1]:
+        for g in games:
             self.add_game(g)
 
         trueskill_sort = lambda x: (x.mu - 3 * x.sigma)
-
-        ladder_last = sorted(
-            self.players.values(),
-            key=trueskill_sort,
-            reverse=True)
-
-        self.add_game(games[-1])
 
         ladder = sorted(
             self.players.values(),
             key=trueskill_sort,
             reverse=True)
-        diff = []
-        for p in ladder:
-            diff.append(ladder_last.index(p))
 
         ret = []
-        ret.append(("rank", "name", "change", "lvl", "mu", "sigma"))
+        # ret.append(("rank", "name", "change", "lvl", "mu", "sigma"))
         for i in range(len(ladder)):
-            ret.append((
+            ret.append(rank_item(
                 str(i + 1),
                 str(ladder[i].player.name),
-                str(diff[i] - i),
-                str(int(trueskill_sort(ladder[i]))),
-                "{:.3}".format(ladder[i].mu),
-                "{:.3}".format(ladder[i].sigma),
+                [
+                    ("lvl", str(int(trueskill_sort(ladder[i])))),
+                    ("mu", "{:.3}".format(ladder[i].mu)),
+                    ("sigma", "{:.3}".format(ladder[i].sigma)),
+                ]
             ))
+            # ret.append((
+            #     str(i + 1),
+            #     str(ladder[i].player.name),
+            #     str(diff[i] - i),
+            #     str(int(trueskill_sort(ladder[i]))),
+            #     "{:.3}".format(ladder[i].mu),
+            #     "{:.3}".format(ladder[i].sigma),
+            # ))
         return ret
 
 

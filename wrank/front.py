@@ -125,6 +125,7 @@ class LadderManager(object):
                             nargs='?',
                             )
         ladder.add_argument('-v', '--verbose', action='count')
+        ladder.add_argument('-b', '--history')
         ladder.add_argument('options', nargs='*')
         ladder.set_defaults(func=self._show_ladder)
 
@@ -229,6 +230,22 @@ class LadderManager(object):
         return [ret]
 
     def _show_ladder(self, command):
+        def prepare_ladder(current, before):
+            ret = []
+            ret.append([
+                "rank",
+                "name",
+                "change",
+            ] + [x[0] for x in current[0].extra])
+            before = {row.name: row for row in before}
+            for player in current:
+                ret.append([
+                    str(player.rank),
+                    str(player.name),
+                    str(int(before[player.name].rank) - int(player.rank)),
+                ] + [str(x[1]) for x in player.extra])
+            return ret
+
         players, games = self.data.get_players_games()
         if command.type == 'ELO':
             elo_k = 24
@@ -244,10 +261,16 @@ class LadderManager(object):
         elif command.type == 'scaled':
             ladder = ladders.BasicScaledLadder()
         elif command.type == 'trueskill':
-            ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 30.)
+            ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 30)
 
-        data = ladder.process(players, games)
-        print command.verbose
+        current_ladder = ladder.process(players, games)
+        if command.history:
+            before_ladder = ladder.process(players, games[0:-int(command.history)])
+        else:
+            before_ladder = ladder.process(players, games[0:-1])
+
+        data = prepare_ladder(current_ladder, before_ladder)
+
         if command.verbose is None and command.type == 'trueskill':
             # title line is 0
             lines = [0]

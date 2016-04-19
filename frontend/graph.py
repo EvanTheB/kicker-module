@@ -30,11 +30,11 @@ def data_to_yarr(graph_data):
 def graph_ranks(p, g, ladder):
     def get_names_ranks(data):
         ret = []
-        for l in data[1:]:
-            if float(l[5]) > 7.:
+        for l in data:
+            if float(l.extra[2][1]) > 7.:
                 ret.append((l[1], len(data)))
             else:
-                ret.append((l[1], l[0]))
+                ret.append((l.name, l.rank))
         return ret
 
     graph_data = []
@@ -51,8 +51,8 @@ def graph_ranks(p, g, ladder):
 def graph_level(p, g, ladder):
     def get_names_lvl(data):
         ret = []
-        for l in data[1:]:
-            ret.append((l[1], l[3]))
+        for l in data:
+            ret.append((l.name, l.extra[0][1]))
         return ret
 
     graph_data = []
@@ -69,11 +69,11 @@ def graph_level(p, g, ladder):
 def graph_skill(p, g, ladder):
     def get_names_skill(data):
         ret = []
-        for l in data[1:]:
-            if float(l[5]) > 7.:
-                ret.append((l[1], 0.))
+        for l in data:
+            if float(l.extra[2][1]) > 7.:
+                ret.append((l.name, 0.))
             else:
-                ret.append((l[1], l[4]))
+                ret.append((l.name, l.extra[1][1]))
         return ret
 
     graph_data = []
@@ -89,8 +89,8 @@ def graph_skill(p, g, ladder):
 def graph_skill_topn(p, g, ladder, n):
     def get_names_skill(data):
         ret = []
-        for l in data[1:]:
-            ret.append((l[1], l[4]))
+        for l in data:
+            ret.append((l.name, l.extra[1][1]))
         return ret
 
     def get_top_n(data):
@@ -118,14 +118,14 @@ def graph_skill_topn(p, g, ladder, n):
 def graph_skill_error(p, g, ladder):
     def get_names_skill(data):
         ret = []
-        for l in data[1:]:
-            ret.append((l[1], l[4]))
+        for l in data:
+            ret.append((l.name, l.extra[1][1]))
         return ret
 
     def get_names_err(data):
         ret = []
-        for l in data[1:]:
-            ret.append((l[1], float(l[5])))
+        for l in data:
+            ret.append((l.name, l.extra[2][1]))
         return ret
 
     def get_top_n(data):
