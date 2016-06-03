@@ -309,16 +309,18 @@ class LadderManager(object):
                 if set(line).intersection(keep):
                     lines.append(i)
             data = [line for i, line in enumerate(data) if i in lines]
-        return pretty_print_2d(data)
+        return ["After {} games, change vs game {}".format(
+            len(games), len(games) - int(command.history))
+            ] + pretty_print_2d(data)
 
     def _show_history(self, command):
-        ret = []
-        i = 1
-        _, games = self.data.get_players_games()
-        games = list(enumerate(games))
+        ret=[]
+        i=1
+        _, games=self.data.get_players_games()
+        games=list(enumerate(games))
         if command.players:
             for p in command.players:
-                games = [
+                games=[
                     (i, g) for (
                         i, g) in games if p in (
                         itertools.chain.from_iterable(
@@ -330,10 +332,10 @@ class LadderManager(object):
         return ret[0:5]
 
     def write_index_html(self):
-        players, games = self.data.get_players_games()
-        data_tuples = ladders.TrueSkillLadder(dynamics_factor=25.0 / 300.).process(
+        players, games=self.data.get_players_games()
+        data_tuples=ladders.TrueSkillLadder(dynamics_factor=25.0 / 300.).process(
             players, games)
-        output = ""
+        output=""
         output += "Trueskill ladder ranked on mu - 3*sigma (P(skill>level)~0.99)<br>\n"
         output += '<table border="1">\n'
         for line in data_tuples:
@@ -348,7 +350,7 @@ class LadderManager(object):
         # output += '\n<p>Next most awesome matches (rated by how much the
         # ladder will be changed (andystyle)): <br>'
         output += '\n<p>Game history: <br>'
-        i = 1
+        i=1
         for g in games:
             output += "{}: {}<br>".format(i, g)
             i += 1
