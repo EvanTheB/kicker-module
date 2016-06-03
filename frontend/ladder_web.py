@@ -59,7 +59,7 @@ class index:
         Output of commands will print below, commands are:<br>
         ladder [-v[v]] (print the ladder with increasing verbosity levels)<br>
         add [player] (add a player) <br>
-        game [a b] {beat,lost,draw} [c d] (add a game) <br>
+        game [a b] {>,=} [c d] (add a game) <br>
         history [player] (show the game history)<br>
         next [names] (given some players, pick a nice game)<br>
         whowins a b c d (show the probabilities of the game a b vs c d)<br>
