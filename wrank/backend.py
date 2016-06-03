@@ -179,13 +179,15 @@ class LadderGame(object):
 
         for w in command_words:
             if w.isalpha():
-                assert w in players
+                assert w in players, "'{}' not in players".format(w)
                 self.teams[-1].append(w)
             elif w in ['=', '>']:
                 self.teams.append([])
                 self.wins.append(w)
             else:
-                assert False
+                assert False, "bad characters"
+        assert len(self.teams) > 1, "Must have at least 2 teams"
+        assert all(len(t) > 0 for t in self.teams), "Must have a player on every team"
 
     def __str__(self):
         return "Game: " + " ".join(self.command_words)
