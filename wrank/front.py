@@ -263,11 +263,12 @@ class LadderManager(object):
         elif command.type == 'trueskill':
             ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 30)
 
-        current_ladder = ladder.process(players, games)
         if command.history:
-            before_ladder = ladder.process(players, games[0:-int(command.history)])
-        else:
-            before_ladder = ladder.process(players, games[0:-1])
+            int(command.history)
+            assert len(games) > int(command.history) > 0
+
+        current_ladder = ladder.process(players, games)
+        before_ladder = ladder.process(players, games[0:-int(command.history or 1)])
 
         data = prepare_ladder(current_ladder, before_ladder)
 
@@ -292,15 +293,15 @@ class LadderManager(object):
             # played in last 50 games
             keep = reduce(
                 lambda a, b: a.union(b), (
-                    set(p for p in itertools.chain.from_iterable(games[-1].teams))
-                    for g in games[-100:]
+                    set(p for p in itertools.chain.from_iterable(g.teams))
+                    for g in games[-50:]
                 )
             )
             # played at least 3 games
             keep = keep.intersection(set(p for p, c in itertools.ifilter(
                 lambda x: x[1] > 2,
                 frequencies(
-                    p for g in games for p in itertools.chain.from_iterable(games[-1].teams)
+                    p for g in games for p in itertools.chain.from_iterable(g.teams)
                 ).items()
             )))
             change_index = data[0].index('change')
@@ -310,7 +311,7 @@ class LadderManager(object):
                     lines.append(i)
             data = [line for i, line in enumerate(data) if i in lines]
         return ["After {} games, change vs game {}".format(
-            len(games), len(games) - int(command.history))
+            len(games), len(games) - int(command.history or 1))
             ] + pretty_print_2d(data)
 
     def _show_history(self, command):
