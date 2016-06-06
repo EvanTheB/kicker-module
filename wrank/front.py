@@ -8,12 +8,13 @@ import argparse
 import os
 import time
 import itertools
+from functools import reduce
+
 from toolz import frequencies
 
 import wrank.backend as backend
 import wrank.heuristics as heuristics
 from wrank.ladder import ladders
-from functools import reduce
 
 PART_HTML = os.path.join(os.path.dirname(__file__), '..', 'static', 'part.html')
 
