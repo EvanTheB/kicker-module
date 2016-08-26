@@ -121,12 +121,13 @@ class LadderManager(object):
         ladder = subcommands.add_parser('ladder')
         ladder.add_argument('type',
                             type=str,
-                            choices=['ELO', 'basic', 'scaled', 'trueskill'],
+                            choices=['ELO', 'basic', 'scaled', 'trueskill', "trueskill_ms"],
                             default='trueskill',
                             nargs='?',
                             )
         ladder.add_argument('-v', '--verbose', action='count')
         ladder.add_argument('-b', '--history')
+        ladder.add_argument('-f', '--filter', nargs='*')
         ladder.add_argument('options', nargs='*')
         ladder.set_defaults(func=self._show_ladder)
 
@@ -248,6 +249,10 @@ class LadderManager(object):
             return ret
 
         players, games = self.data.get_players_games()
+        if command.filter:
+            players = {k:v for k,v in players.items() if k in command.filter}
+            games = [g for g in games if all(p in command.filter for p in itertools.chain.from_iterable(g.teams))]
+
         if command.type == 'ELO':
             elo_k = 24
             if command.options:
@@ -263,6 +268,8 @@ class LadderManager(object):
             ladder = ladders.BasicScaledLadder()
         elif command.type == 'trueskill':
             ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 30)
+        elif command.type == 'trueskill_ms':
+            ladder = ladders.TrueSkillLadder(dynamics_factor=25.0 / 300)
 
         if command.history:
             int(command.history)
@@ -273,7 +280,7 @@ class LadderManager(object):
 
         data = prepare_ladder(current_ladder, before_ladder)
 
-        if command.verbose is None and command.type == 'trueskill':
+        if command.verbose is None and 'trueskill' in command.type:
             # title line is 0
             lines = [0]
             keep = set(p for p in itertools.chain.from_iterable(games[-1].teams))
@@ -288,7 +295,7 @@ class LadderManager(object):
                 if line[change_index] != '0':
                     lines.append(i)
             data = [line for i, line in enumerate(data) if i in lines]
-        elif command.verbose == 1 and command.type == 'trueskill':
+        elif command.verbose == 1 and 'trueskill' in command.type:
             # title line is 0
             lines = [0]
             # played in last 50 games
